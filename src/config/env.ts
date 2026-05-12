@@ -4,7 +4,7 @@
  */
 import dotenv from "dotenv";
 import { z } from "zod";
-import logger from "../utils/pino-logger.js";
+import logger from "src/utils/pino-logger.js";
 
 dotenv.config();
 
