@@ -1,0 +1,146 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-id-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// --- Enums ---
+
+enum Role {
+  OWNER
+  INSTRUCTOR
+  STUDENT
+}
+
+enum LessonStatus {
+  PLANNED
+  COMPLETED
+  CANCELLED
+}
+
+// --- Models ---
+
+model School {
+  id             String   @id @default(uuid())
+  name           z.string()
+  address        z.string()?
+  lessonDuration Int      @default(45) // Длительность урока в минутах
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  users   User[]
+  lessons Lesson[]
+  cars    Car[]
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(STUDENT)
+  firstName    String
+  lastName     String
+  phoneNumber  String?  @unique
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  schoolId String
+  school   School @relation(fields: [schoolId], references: [id])
+
+  // Связи 1-к-1 для расширенных профилей
+  instructorProfile InstructorProfile?
+  studentProfile    StudentProfile?
+}
+
+model InstructorProfile {
+  id                String   @id @default(uuid())
+  userId            String   @unique
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  licenseCategories String[] // Например, ['B', 'C']
+  experienceYears   Int?
+  bio               String?
+
+  availability Availability[]
+  lessons      Lesson[]
+  students     StudentProfile[] // Ученики, закрепленные за этим учителем
+}
+
+model StudentProfile {
+  id           String   @id @default(uuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Ученик привязан к одному учителю изначально
+  instructorId String
+  instructor   InstructorProfile @relation(fields: [instructorId], references: [id])
+
+  totalLessons Int @default(0)
+  balance      Int @default(0) // Оплаченные, но не использованные уроки
+
+  lessons Lesson[]
+}
+
+model Car {
+  id            String  @id @default(uuid())
+  model         String
+  plateNumber   String  @unique
+  lastOdometer  Int     @default(0)
+  isManual      Boolean @default(true) // Механика или автомат
+
+  schoolId String
+  school   School @relation(fields: [schoolId], references: [id])
+  lessons  Lesson[]
+}
+
+model Lesson {
+  id        String       @id @default(uuid())
+  startTime DateTime
+  endTime   DateTime
+  status    LessonStatus @default(PLANNED)
+
+  // Данные для WhatsApp (гео-метки или текст)
+  locationStart String?
+  locationEnd   String?
+
+  // На перспективу (учет топлива и износа)
+  odometerStart Int?
+  odometerEnd   Int?
+  fuelLevelStart Float?
+  fuelLevelEnd   Float?
+
+  schoolId     String
+  school       School @relation(fields: [schoolId], references: [id])
+  
+  instructorId String
+  instructor   InstructorProfile @relation(fields: [instructorId], references: [id])
+  
+  studentId    String
+  student      StudentProfile @relation(fields: [studentId], references: [id])
+  
+  carId        String
+  car          Car @relation(fields: [carId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Индекс для ускорения поиска уроков на конкретные даты и предотвращения конфликтов
+  @@index([instructorId, startTime, endTime])
+}
+
+model Availability {
+  id           String @id @default(uuid())
+  instructorId String
+  instructor   InstructorProfile @relation(fields: [instructorId], references: [id], onDelete: Cascade)
+
+  dayOfWeek Int // 0 (воскресенье) - 6 (суббота)
+  startTime String // Формат "HH:mm", например "08:00"
+  endTime   String // Формат "HH:mm", например "16:00"
+
+  @@unique([instructorId, dayOfWeek, startTime, endTime])
+}

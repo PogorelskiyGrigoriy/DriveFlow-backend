@@ -12,7 +12,6 @@ yarn-error.log*
 .eslintcache
 
 *.env
-driveflow_backend/.env
 
 *.db
 *.db-journal
