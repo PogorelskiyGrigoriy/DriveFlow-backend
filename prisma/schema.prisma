@@ -1,8 +1,7 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// documentation: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client-id-js"
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -28,9 +27,9 @@ enum LessonStatus {
 
 model School {
   id             String   @id @default(uuid())
-  name           z.string()
-  address        z.string()?
-  lessonDuration Int      @default(45) // Длительность урока в минутах
+  name           String
+  address        String?
+  lessonDuration Int      @default(45)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
@@ -53,7 +52,6 @@ model User {
   schoolId String
   school   School @relation(fields: [schoolId], references: [id])
 
-  // Связи 1-к-1 для расширенных профилей
   instructorProfile InstructorProfile?
   studentProfile    StudentProfile?
 }
@@ -62,13 +60,13 @@ model InstructorProfile {
   id                String   @id @default(uuid())
   userId            String   @unique
   user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  licenseCategories String[] // Например, ['B', 'C']
+  licenseCategories String[]
   experienceYears   Int?
   bio               String?
 
   availability Availability[]
   lessons      Lesson[]
-  students     StudentProfile[] // Ученики, закрепленные за этим учителем
+  students     StudentProfile[]
 }
 
 model StudentProfile {
@@ -76,12 +74,11 @@ model StudentProfile {
   userId       String   @unique
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   
-  // Ученик привязан к одному учителю изначально
   instructorId String
   instructor   InstructorProfile @relation(fields: [instructorId], references: [id])
 
   totalLessons Int @default(0)
-  balance      Int @default(0) // Оплаченные, но не использованные уроки
+  balance      Int @default(0)
 
   lessons Lesson[]
 }
@@ -91,7 +88,7 @@ model Car {
   model         String
   plateNumber   String  @unique
   lastOdometer  Int     @default(0)
-  isManual      Boolean @default(true) // Механика или автомат
+  isManual      Boolean @default(true)
 
   schoolId String
   school   School @relation(fields: [schoolId], references: [id])
@@ -104,11 +101,9 @@ model Lesson {
   endTime   DateTime
   status    LessonStatus @default(PLANNED)
 
-  // Данные для WhatsApp (гео-метки или текст)
   locationStart String?
   locationEnd   String?
 
-  // На перспективу (учет топлива и износа)
   odometerStart Int?
   odometerEnd   Int?
   fuelLevelStart Float?
@@ -129,7 +124,6 @@ model Lesson {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // Индекс для ускорения поиска уроков на конкретные даты и предотвращения конфликтов
   @@index([instructorId, startTime, endTime])
 }
 
@@ -138,9 +132,9 @@ model Availability {
   instructorId String
   instructor   InstructorProfile @relation(fields: [instructorId], references: [id], onDelete: Cascade)
 
-  dayOfWeek Int // 0 (воскресенье) - 6 (суббота)
-  startTime String // Формат "HH:mm", например "08:00"
-  endTime   String // Формат "HH:mm", например "16:00"
+  dayOfWeek Int
+  startTime String 
+  endTime   String 
 
   @@unique([instructorId, dayOfWeek, startTime, endTime])
 }
