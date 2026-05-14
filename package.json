@@ -9,6 +9,8 @@
     "install-all": "npm install",
     "dev:backend": "npm run dev -w @driveflow/backend",
     "dev:web": "npm run dev -w @driveflow/web-app",
-    "build:shared": "npm run build -w @driveflow/shared"
+    "build:shared": "npm run build -w @driveflow/shared",
+    "db:generate": "npm run generate -w @driveflow/backend",
+    "db:migrate": "npm run migrate:dev -w @driveflow/backend"
   }
 }

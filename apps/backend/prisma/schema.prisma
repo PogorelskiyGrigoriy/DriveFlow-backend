@@ -49,7 +49,6 @@ model User {
   role         Role     @default(STUDENT)
   firstName    String
   lastName     String
-  // Mandatory for Telegram Bot identification
   phoneNumber  String   @unique
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -95,7 +94,7 @@ model Lesson {
   endTime   DateTime
   status    LessonStatus @default(PLANNED)
 
-  // Pickup/Dropoff locations (optional for MVP)
+  // Pickup/Dropoff locations (optional)
   locationStart String?
   locationEnd   String?
 
