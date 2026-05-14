@@ -4,15 +4,18 @@ generator client {
 
 generator zod {
   provider = "zod-prisma-types"
-  output   = "../../../packages/shared/src/generated/zod" // Путь к shared слою в монорепозитории
+  output   = "../../../packages/shared/src/generated/zod"
 }
 
 datasource db {
   provider = "postgresql"
 }
 
+// --- Enums ---
+
 enum Role {
   OWNER
+  ADMIN
   INSTRUCTOR
   STUDENT
 }
@@ -24,20 +27,19 @@ enum LessonStatus {
   NO_SHOW
 }
 
-// --- Модели ---
+// --- Models ---
 
 model School {
   id             String   @id @default(uuid())
   name           String
   address        String?
-  // Требование владельца: CRUD по настройкам школы
+  // Basic configuration for time-slot calculations
   lessonDuration Int      @default(45) 
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
   users   User[]
   lessons Lesson[]
-  cars    Car[]
 }
 
 model User {
@@ -47,14 +49,14 @@ model User {
   role         Role     @default(STUDENT)
   firstName    String
   lastName     String
-  phoneNumber  String?  @unique
+  // Mandatory for Telegram Bot identification
+  phoneNumber  String   @unique
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   schoolId String
   school   School @relation(fields: [schoolId], references: [id])
 
-  // Связи для расширенных профилей (CRUD владельца)
   instructorProfile InstructorProfile?
   studentProfile    StudentProfile?
 }
@@ -64,14 +66,10 @@ model InstructorProfile {
   userId            String   @unique
   user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   licenseCategories String[]
-  experienceYears   Int?
-  bio               String?
 
-  // Для водителя: назначение доступного времени
+  // Working hours and slot management
   availability Availability[]
-  // Для водителя: просмотр своих уроков
   lessons      Lesson[]
-  // Для ученика: привязка к конкретному учителю
   students     StudentProfile[]
 }
 
@@ -80,35 +78,24 @@ model StudentProfile {
   userId       String   @unique
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   
-  // Ученик привязан к одному учителю изначально
+  // Direct link to assigned instructor
   instructorId String
   instructor   InstructorProfile @relation(fields: [instructorId], references: [id])
 
   totalLessons Int @default(0)
-  balance      Int @default(0) // Оплаченные уроки
+  balance      Int @default(0)
 
   lessons Lesson[]
 }
 
-model Car {
-  id            String  @id @default(uuid())
-  model         String
-  plateNumber   String  @unique
-  lastOdometer  Int     @default(0)
-  isManual      Boolean @default(true)
-
-  schoolId String
-  school   School @relation(fields: [schoolId], references: [id])
-  lessons  Lesson[]
-}
-
 model Lesson {
   id        String       @id @default(uuid())
+  // Specific date and time for the booking
   startTime DateTime
   endTime   DateTime
   status    LessonStatus @default(PLANNED)
 
-  // Опционально: откуда забрать и куда высадить
+  // Pickup/Dropoff locations (optional for MVP)
   locationStart String?
   locationEnd   String?
 
@@ -120,14 +107,11 @@ model Lesson {
   
   studentId    String
   student      StudentProfile @relation(fields: [studentId], references: [id])
-  
-  carId        String
-  car          Car @relation(fields: [carId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // Индекс для защиты от накладок и быстрого поиска свободных окон
+  // Prevent overlapping bookings and optimize availability search
   @@index([instructorId, startTime, endTime])
 }
 
@@ -136,9 +120,10 @@ model Availability {
   instructorId String
   instructor   InstructorProfile @relation(fields: [instructorId], references: [id], onDelete: Cascade)
 
-  dayOfWeek Int // 0-6 (Воскресенье - Суббота)
-  startTime String // Формат "HH:mm"
-  endTime   String // Формат "HH:mm"
+  // Recurring weekly schedule
+  dayOfWeek Int    // 0-6 (Sunday to Saturday)
+  startTime String // Format: "HH:mm"
+  endTime   String // Format: "HH:mm"
 
   @@unique([instructorId, dayOfWeek, startTime, endTime])
 }
