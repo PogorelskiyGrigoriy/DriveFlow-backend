@@ -1,15 +1,15 @@
-// documentation: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
 
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+generator zod {
+  provider = "zod-prisma-types"
+  output   = "../../../packages/shared/src/generated/zod" // Путь к shared слою в монорепозитории
 }
 
-// --- Enums ---
+datasource db {
+  provider = "postgresql"
+}
 
 enum Role {
   OWNER
@@ -21,15 +21,17 @@ enum LessonStatus {
   PLANNED
   COMPLETED
   CANCELLED
+  NO_SHOW
 }
 
-// --- Models ---
+// --- Модели ---
 
 model School {
   id             String   @id @default(uuid())
   name           String
   address        String?
-  lessonDuration Int      @default(45)
+  // Требование владельца: CRUD по настройкам школы
+  lessonDuration Int      @default(45) 
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
@@ -52,6 +54,7 @@ model User {
   schoolId String
   school   School @relation(fields: [schoolId], references: [id])
 
+  // Связи для расширенных профилей (CRUD владельца)
   instructorProfile InstructorProfile?
   studentProfile    StudentProfile?
 }
@@ -64,8 +67,11 @@ model InstructorProfile {
   experienceYears   Int?
   bio               String?
 
+  // Для водителя: назначение доступного времени
   availability Availability[]
+  // Для водителя: просмотр своих уроков
   lessons      Lesson[]
+  // Для ученика: привязка к конкретному учителю
   students     StudentProfile[]
 }
 
@@ -74,11 +80,12 @@ model StudentProfile {
   userId       String   @unique
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   
+  // Ученик привязан к одному учителю изначально
   instructorId String
   instructor   InstructorProfile @relation(fields: [instructorId], references: [id])
 
   totalLessons Int @default(0)
-  balance      Int @default(0)
+  balance      Int @default(0) // Оплаченные уроки
 
   lessons Lesson[]
 }
@@ -101,13 +108,9 @@ model Lesson {
   endTime   DateTime
   status    LessonStatus @default(PLANNED)
 
+  // Опционально: откуда забрать и куда высадить
   locationStart String?
   locationEnd   String?
-
-  odometerStart Int?
-  odometerEnd   Int?
-  fuelLevelStart Float?
-  fuelLevelEnd   Float?
 
   schoolId     String
   school       School @relation(fields: [schoolId], references: [id])
@@ -124,6 +127,7 @@ model Lesson {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Индекс для защиты от накладок и быстрого поиска свободных окон
   @@index([instructorId, startTime, endTime])
 }
 
@@ -132,9 +136,9 @@ model Availability {
   instructorId String
   instructor   InstructorProfile @relation(fields: [instructorId], references: [id], onDelete: Cascade)
 
-  dayOfWeek Int
-  startTime String 
-  endTime   String 
+  dayOfWeek Int // 0-6 (Воскресенье - Суббота)
+  startTime String // Формат "HH:mm"
+  endTime   String // Формат "HH:mm"
 
   @@unique([instructorId, dayOfWeek, startTime, endTime])
 }
