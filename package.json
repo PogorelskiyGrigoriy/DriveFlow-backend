@@ -1,12 +1,14 @@
 {
-  "name": "driveflow",
+  "name": "driveflow-monorepo",
   "private": true,
   "workspaces": [
     "apps/*",
     "packages/*"
   ],
   "scripts": {
-    "dev": "npm run dev --workspace=@driveflow/backend",
-    "db:generate": "npm run generate --workspace=@driveflow/backend"
+    "install-all": "npm install",
+    "dev:backend": "npm run dev -w @driveflow/backend",
+    "dev:web": "npm run dev -w @driveflow/web-app",
+    "build:shared": "npm run build -w @driveflow/shared"
   }
 }
