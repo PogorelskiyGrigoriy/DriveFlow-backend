@@ -1,6 +1,7 @@
-import pino from "pino";
+import pino from "../utils//pino";
 import fs from "node:fs";
 import pretty from "pino-pretty";
+
 
 const LOGS_DIR = "./logs";
 const COMBINED_LOG = `${LOGS_DIR}/combined.log`;

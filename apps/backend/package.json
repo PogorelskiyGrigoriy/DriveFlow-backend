@@ -1,5 +1,5 @@
 {
-  "name": "driveflow_backend",
+  "name": "@driveflow/backend",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -12,7 +12,6 @@
   "type": "module",
   "dependencies": {
     "@driveflow/shared": "*",
-    "@prisma/client": "^7.8.0",
     "bcrypt-ts": "^8.0.1",
     "cors": "^2.8.6",
     "dayjs": "^1.11.20",
@@ -25,6 +24,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@prisma/client": "^7.8.0",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
