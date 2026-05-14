@@ -1,4 +1,4 @@
-import pino from "../utils//pino";
+import pino from "pino";
 import fs from "node:fs";
 import pretty from "pino-pretty";
 
