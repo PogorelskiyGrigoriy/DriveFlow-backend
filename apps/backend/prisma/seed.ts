@@ -1,8 +1,7 @@
-import { PrismaClient, Role } from '@prisma/client';
-import { PrismaPg } from '@prisma/adapter-pg';
-import pg from 'pg';
+import { Role } from '@prisma/client';
 import { faker } from '@faker-js/faker';
 import { hashSync, genSaltSync } from 'bcrypt-ts';
+import { createPrismaClient } from '../src/infrastructure/db.js';
 
 const INSTRUCTOR_PASSWORD_RAW = 'teacher123';
 const STUDENT_PASSWORD_RAW = 'student123';
@@ -11,15 +10,8 @@ const salt = genSaltSync(10);
 const INSTRUCTOR_HASH = hashSync(INSTRUCTOR_PASSWORD_RAW, salt);
 const STUDENT_HASH = hashSync(STUDENT_PASSWORD_RAW, salt);
 
-const connectionString = process.env.DIRECT_URL || process.env.DATABASE_URL;
-
-if (!connectionString) {
-  throw new Error('DIRECT_URL or DATABASE_URL not found in process.env');
-}
-
-const pool = new pg.Pool({ connectionString });
-const adapter = new PrismaPg(pool);
-const prisma = new PrismaClient({ adapter });
+// factory pattern with DIRECT_URL priority
+const { prisma, pool } = createPrismaClient(process.env.DIRECT_URL || process.env.DATABASE_URL);
 
 async function main() {
   console.log('Starting Seeding...');
