@@ -4,12 +4,14 @@ import dotenv from 'dotenv';
 import { defineConfig, env } from 'prisma/config';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
 dotenv.config({ path: path.resolve(__dirname, '.env') });
 
 export default defineConfig({
   schema: './prisma/schema.prisma',
   datasource: {
     url: env('DIRECT_URL'),
+  },
+  migrations: {
+    seed: 'tsx --env-file=.env ./prisma/seed.ts',
   },
 });
