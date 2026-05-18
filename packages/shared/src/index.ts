@@ -4,3 +4,6 @@ export * from './modules/auth/index.js';
 
 // Export global error contracts
 export * from './types/error.types.js';
+
+// Export slots management contracts
+export * from './modules/slots/index.js';
