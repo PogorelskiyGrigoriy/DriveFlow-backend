@@ -1,128 +1,138 @@
-import { Role } from '@prisma/client';
+import { Role, LessonStatus } from '@prisma/client';
 import { faker } from '@faker-js/faker';
-import { hashSync, genSaltSync } from 'bcrypt-ts';
 import { createPrismaClient } from '../src/infrastructure/db.js';
 
-const INSTRUCTOR_PASSWORD_RAW = 'teacher123';
-const STUDENT_PASSWORD_RAW = 'student123';
-
-const salt = genSaltSync(10);
-const INSTRUCTOR_HASH = hashSync(INSTRUCTOR_PASSWORD_RAW, salt);
-const STUDENT_HASH = hashSync(STUDENT_PASSWORD_RAW, salt);
-
-// factory pattern with DIRECT_URL priority
+// Используем паттерн фабрики с приоритетом DIRECT_URL для сида
 const { prisma, pool } = createPrismaClient(process.env.DIRECT_URL || process.env.DATABASE_URL);
 
 async function main() {
-  console.log('Starting Seeding...');
-  console.log(`Instructor Password: ${INSTRUCTOR_PASSWORD_RAW}`);
-  console.log(`Student Password: ${STUDENT_PASSWORD_RAW}`);
+  console.log('🚀 Starting MVP Database Seeding...');
 
-  console.log('Cleaning up database...');
-  await prisma.availability.deleteMany();
+  // 1. Очистка БД в строгом порядке из-за ограничений внешних ключей (Foreign Keys)
+  console.log('🧹 Cleaning up database...');
+  await prisma.magicToken.deleteMany();
   await prisma.lesson.deleteMany();
-  await prisma.studentProfile.deleteMany();
-  await prisma.instructorProfile.deleteMany();
+  await prisma.instructorAvailability.deleteMany();
   await prisma.user.deleteMany();
-  await prisma.school.deleteMany();
 
-  const school = await prisma.school.create({
+  // 2. Создаем главного Инструктора для демонстрации
+  console.log('👤 Creating main instructor for demo...');
+  const mainInstructor = await prisma.user.create({
     data: {
-      name: 'DriveFlow Academy Beer Sheva',
-      address: 'Ha-Atsmaut St 42, Beer Sheva',
-      lessonDuration: 45,
+      phoneNumber: '+972501112233', // Статичный номер для тестов входа
+      firstName: 'Eli',
+      lastName: 'Cohen',
+      role: Role.INSTRUCTOR,
     },
   });
-  console.log(`School created: ${school.name}`);
+  console.log(`Main instructor created: ${mainInstructor.firstName} ${mainInstructor.lastName}`);
 
-  const ownerUser = await prisma.user.create({
-    data: {
-      email: 'owner@driveflow.me',
-      passwordHash: INSTRUCTOR_HASH,
-      role: Role.OWNER,
-      firstName: 'Liron',
-      lastName: 'Owner',
-      phoneNumber: '+972501112233',
-      schoolId: school.id,
-      instructorProfile: {
-        create: {
-          licenseCategories: ['A', 'B', 'C'],
-        },
-      },
-    },
-  });
-  console.log('Owner/Instructor created');
-
-  await prisma.user.create({
-    data: {
-      email: 'admin@driveflow.me',
-      passwordHash: INSTRUCTOR_HASH,
-      role: Role.ADMIN,
-      firstName: 'Grisha',
-      lastName: 'Manager',
-      phoneNumber: '+972504445566',
-      schoolId: school.id,
-    },
-  });
-  console.log('Admin created');
-
-  const instructorIds: string[] = [];
-  
-  const ownerProfile = await prisma.instructorProfile.findUnique({ where: { userId: ownerUser.id } });
-  if (ownerProfile) instructorIds.push(ownerProfile.id);
-
-  for (let i = 1; i <= 4; i++) {
-    const instructor = await prisma.user.create({
+  // 3. Задаем рабочие часы (Воскресенье - Четверг, с 08:00 до 17:00)
+  console.log('📅 Setting up availability (Sun-Thu, 08:00-17:00)...');
+  for (let day = 0; day <= 4; day++) {
+    await prisma.instructorAvailability.create({
       data: {
-        email: `teacher${i}@driveflow.me`,
-        passwordHash: INSTRUCTOR_HASH,
-        role: Role.INSTRUCTOR,
+        instructorId: mainInstructor.id,
+        dayOfWeek: day,
+        startHour: 8,
+        endHour: 17,
+      },
+    });
+  }
+
+  // 4. Создаем пару дополнительных инструкторов для реалистичности
+  const secondaryInstructors = [];
+  for (let i = 1; i <= 2; i++) {
+    const teacher = await prisma.user.create({
+      data: {
+        phoneNumber: `+97250999000${i}`,
         firstName: faker.person.firstName('male'),
         lastName: faker.person.lastName(),
-        phoneNumber: faker.phone.number(),
-        schoolId: school.id,
-        instructorProfile: {
-          create: {
-            licenseCategories: ['B'],
-          },
-        },
+        role: Role.INSTRUCTOR,
       },
-      include: { instructorProfile: true },
     });
-    if (instructor.instructorProfile) instructorIds.push(instructor.instructorProfile.id);
-  }
-  console.log('4 additional instructors created');
-
-  console.log('Creating 20 students...');
-  for (let i = 1; i <= 20; i++) {
-    const randomInstructorId = instructorIds[Math.floor(Math.random() * instructorIds.length)];
+    secondaryInstructors.push(teacher);
     
-    await prisma.user.create({
+    // Минимальный график для них
+    await prisma.instructorAvailability.create({
+      data: { instructorId: teacher.id, dayOfWeek: 0, startHour: 9, endHour: 16 }
+    });
+  }
+
+  // 5. Создаем 15 учеников и привязываем их к учителям
+  console.log('👥 Creating 15 students...');
+  const students = [];
+  for (let i = 1; i <= 15; i++) {
+    // 10 учеников гарантированно отдаем главному инструктору, остальных распределяем случайно
+    const assignedInstructor = i <= 10 ? mainInstructor : secondaryInstructors[Math.floor(Math.random() * secondaryInstructors.length)];
+    const paddedIndex = String(i).padStart(2, '0');
+    
+    const student = await prisma.user.create({
       data: {
-        email: `student${i}@driveflow.me`,
-        passwordHash: STUDENT_HASH,
-        role: Role.STUDENT,
+        phoneNumber: `+9725211100${paddedIndex}`,
         firstName: faker.person.firstName(),
         lastName: faker.person.lastName(),
-        phoneNumber: faker.phone.number(),
-        schoolId: school.id,
-        studentProfile: {
-          create: {
-            instructorId: randomInstructorId,
-            balance: 5,
-            totalLessons: 0,
-          },
-        },
+        role: Role.STUDENT,
+        instructorId: assignedInstructor.id,
+      },
+    });
+    students.push(student);
+  }
+
+  // 6. Генерируем тестовые уроки для Eli Cohen (чтобы дашборд сразу ожил)
+  console.log('🚗 Seeding sample lessons for the dashboard...');
+  const eliStudents = students.filter(s => s.instructorId === mainInstructor.id);
+
+  if (eliStudents.length >= 3) {
+    // 1. Прошедший вчерашний урок
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    yesterday.setHours(14, 0, 0, 0);
+
+    await prisma.lesson.create({
+      data: {
+        instructorId: mainInstructor.id,
+        studentId: eliStudents[0].id,
+        startTime: yesterday,
+        status: LessonStatus.COMPLETED,
+      },
+    });
+
+    // 2. Предстоящий урок на завтра в 10:00
+    const tomorrow1 = new Date();
+    tomorrow1.setDate(tomorrow1.getDate() + 1);
+    tomorrow1.setHours(10, 0, 0, 0);
+
+    await prisma.lesson.create({
+      data: {
+        instructorId: mainInstructor.id,
+        studentId: eliStudents[1].id,
+        startTime: tomorrow1,
+        status: LessonStatus.SCHEDULED,
+      },
+    });
+
+    // 3. Предстоящий урок на завтра в 11:00
+    const tomorrow2 = new Date();
+    tomorrow2.setDate(tomorrow2.getDate() + 1);
+    tomorrow2.setHours(11, 0, 0, 0);
+
+    await prisma.lesson.create({
+      data: {
+        instructorId: mainInstructor.id,
+        studentId: eliStudents[2].id,
+        startTime: tomorrow2,
+        status: LessonStatus.SCHEDULED,
       },
     });
   }
 
-  console.log('Seeding completed!');
+  console.log('🎉 Seeding successfully completed!');
 }
 
 main()
   .catch((e) => {
-    console.error('Seed failed:', e);
+    console.error('❌ Seed failed:', e);
     process.exit(1);
   })
   .finally(async () => {

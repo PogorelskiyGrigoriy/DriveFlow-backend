@@ -38,3 +38,5 @@ export const UserProfileSchema = UserSchema.omit({
     .nullish() 
     .or(z.literal('')),
 });
+
+export type UserProfile = z.infer<typeof UserProfileSchema>;

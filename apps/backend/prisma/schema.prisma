@@ -11,118 +11,81 @@ datasource db {
   provider = "postgresql"
 }
 
-// --- Enums ---
-
 enum Role {
-  OWNER
-  ADMIN
   INSTRUCTOR
   STUDENT
 }
 
 enum LessonStatus {
-  PLANNED
+  SCHEDULED
   COMPLETED
   CANCELLED
-  NO_SHOW
-}
-
-// --- Models ---
-
-model School {
-  id             String   @id @default(uuid())
-  name           String
-  address        String?
-  // Basic configuration for time-slot calculations
-  lessonDuration Int      @default(45) 
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  users   User[]
-  lessons Lesson[]
 }
 
 model User {
   id           String   @id @default(uuid())
-  email        String   @unique
-  passwordHash String
-  role         Role     @default(STUDENT)
+  phoneNumber  String   @unique // Главный идентификатор в Израиле (+972...)
   firstName    String
   lastName     String
-  phoneNumber  String   @unique
+  role         Role     @default(STUDENT)
   createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
 
-  schoolId String
-  school   School @relation(fields: [schoolId], references: [id])
+  // Связь "Учитель -> Ученики" (Self-relation)
+  // Ученик привязан к одному учителю. У учителя много учеников.
+  instructorId String?
+  instructor   User?    @relation("InstructorStudents", fields: [instructorId], references: [id])
+  students     User[]   @relation("InstructorStudents")
 
-  instructorProfile InstructorProfile?
-  studentProfile    StudentProfile?
+  // Связи с уроками
+  lessonsAsInstructor Lesson[] @relation("InstructorLessons")
+  lessonsAsStudent    Lesson[] @relation("StudentLessons")
+
+  // Настройки рабочего времени (только для роли INSTRUCTOR)
+  availabilities      InstructorAvailability[]
+
+  // Токены для беспарольного входа (Magic Links) через SMS/WhatsApp
+  magicTokens         MagicToken[]
 }
 
-model InstructorProfile {
-  id                String   @id @default(uuid())
-  userId            String   @unique
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  licenseCategories String[]
-
-  // Working hours and slot management
-  availability Availability[]
-  lessons      Lesson[]
-  students     StudentProfile[]
-}
-
-model StudentProfile {
-  id           String   @id @default(uuid())
-  userId       String   @unique
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  // Direct link to assigned instructor
+model InstructorAvailability {
+  id           String @id @default(uuid())
   instructorId String
-  instructor   InstructorProfile @relation(fields: [instructorId], references: [id])
+  instructor   User   @relation(fields: [instructorId], references: [id], onDelete: Cascade)
 
-  totalLessons Int @default(0)
-  balance      Int @default(0)
+  // 0 = Воскресенье (Йом Ришон — начало недели в Израиле), 1 = Понедельник ... 6 = Суббота
+  dayOfWeek    Int    
+  startHour    Int    // Час начала работы (например, 8 означает 08:00)
+  endHour      Int    // Час окончания работы (например, 17 означает 17:00)
 
-  lessons Lesson[]
+  @@unique([instructorId, dayOfWeek]) // Один график на один день недели для конкретного учителя
 }
 
 model Lesson {
-  id        String       @id @default(uuid())
-  // Specific date and time for the booking
-  startTime DateTime
-  endTime   DateTime
-  status    LessonStatus @default(PLANNED)
-
-  // Pickup/Dropoff locations (optional)
-  locationStart String?
-  locationEnd   String?
-
-  schoolId     String
-  school       School @relation(fields: [schoolId], references: [id])
-  
+  id           String       @id @default(uuid())
   instructorId String
-  instructor   InstructorProfile @relation(fields: [instructorId], references: [id])
-  
+  instructor   User         @relation("InstructorLessons", fields: [instructorId], references: [id])
   studentId    String
-  student      StudentProfile @relation(fields: [studentId], references: [id])
+  student      User         @relation("StudentLessons", fields: [studentId], references: [id])
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  // Дата и время начала урока.
+  // Логика бэкенда будет гарантировать запись на начало часа (например, 10:00:00)
+  startTime    DateTime
+  
+  // Длительность урока в минутах. По твоему условию дефолт — 1 час (60 минут)
+  durationMin  Int          @default(60) 
+  
+  status       LessonStatus @default(SCHEDULED)
+  createdAt    DateTime     @default(now())
 
-  // Prevent overlapping bookings and optimize availability search
-  @@index([instructorId, startTime, endTime])
+  // Защита на уровне БД: учитель не может физически забронировать два урока на одно и то же время
+  @@unique([instructorId, startTime]) 
 }
 
-model Availability {
-  id           String @id @default(uuid())
-  instructorId String
-  instructor   InstructorProfile @relation(fields: [instructorId], references: [id], onDelete: Cascade)
-
-  // Recurring weekly schedule
-  dayOfWeek Int    // 0-6 (Sunday to Saturday)
-  startTime String // Format: "HH:mm"
-  endTime   String // Format: "HH:mm"
-
-  @@unique([instructorId, dayOfWeek, startTime, endTime])
+model MagicToken {
+  id        String   @id @default(uuid())
+  token     String   @unique @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
 }
