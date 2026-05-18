@@ -1,12 +1,10 @@
+import 'dotenv/config';
+
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
-import { ZodError } from 'zod';
 import authRouter from './modules/auth/auth.routes.js';
 import logger from './utils/pino-logger.js';
-
-// Load environment variables from .env file
-dotenv.config();
+import { errorMiddleware } from './middlewares/error.middleware.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -15,7 +13,7 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json()); // Essential for parsing req.body
 
-// Request logging middleware (optional, but highly recommended for debugging)
+// Request logging middleware for backend activity tracking
 app.use((req: Request, res: Response, next: NextFunction) => {
   logger.info(`${req.method} ${req.url}`);
   next();
@@ -30,36 +28,14 @@ app.get('/health', (req: Request, res: Response) => {
 });
 
 /**
- * Global Error Handling Middleware (Express 5 style)
- * Catches all sync/async errors thrown from controllers and services
+ * Global Error Handling Middleware Pipeline
+ * Intercepts all validation and operational failures downstream
  */
-app.use((err: any, req: Request, res: Response, next: NextFunction): void => {
-  // 1. Handle Zod validation errors from @driveflow/shared schemas
-  if (err instanceof ZodError) {
-    logger.warn(`Validation failed: ${JSON.stringify(err.errors)}`);
-    res.status(400).json({
-      error: 'Validation Error',
-      // Format errors nicely: { fieldName: "Error message" }
-      details: err.errors.reduce((acc: Record<string, string>, current) => {
-        const path = current.path.join('.');
-        acc[path] = current.message;
-        return acc;
-      }, {}),
-    });
-    return;
-  }
-
-  // 2. Handle standard business logic errors (thrown with `throw new Error('...')`)
-  logger.error(`Unhandled error: ${err.message}`, { stack: err.stack });
-  
-  res.status(err.status || 500).json({
-    error: err.message || 'Internal Server Error',
-  });
-});
+app.use(errorMiddleware);
 
 // Start the Express Server
 app.listen(PORT, () => {
-  logger.info(`🚀 DriveFlow Backend is running on http://localhost:${PORT}`);
+  logger.info(`DriveFlow Backend is running on http://localhost:${PORT}`);
 });
 
 export default app;
