@@ -1,42 +1,53 @@
-import { IAuthService, AuthResponse } from './auth.service.js';
+import { IAuthService } from './auth.service.js';
 import { prisma } from '../../infrastructure/db.js';
 import { compare } from 'bcrypt-ts';
 import jwt from 'jsonwebtoken';
 import logger from '../../utils/pino-logger.js';
 import { Role } from '@prisma/client';
+import { AuthResponseDTO, SharedUser } from '@driveflow/shared';
 
 export class AuthServiceImpl implements IAuthService {
   private jwtSecret = process.env.JWT_SECRET || 'super-secret-key';
 
-  async loginInstructor(phoneNumber: string, passwordRaw: string): Promise<AuthResponse> {
+  async loginInstructor(phoneNumber: string, passwordRaw: string): Promise<AuthResponseDTO> {
     const user = await prisma.user.findUnique({ where: { phoneNumber } });
 
     if (!user || user.role !== Role.INSTRUCTOR) {
-      throw new Error('Неверный номер телефона или недостаточно прав');
+      throw new Error('Invalid phone number or insufficient permissions');
     }
 
     if (!user.passwordHash) {
-      throw new Error('Для данного пользователя не задан пароль');
+      throw new Error('Password is not set for this instructor account');
     }
 
     const isPasswordValid = await compare(passwordRaw, user.passwordHash);
     if (!isPasswordValid) {
-      throw new Error('Неверный пароль');
+      throw new Error('Invalid password');
     }
 
     const token = jwt.sign({ id: user.id, role: user.role }, this.jwtSecret, { expiresIn: '30d' });
-    const { passwordHash, ...userWithoutPassword } = user;
+    
+    // Explicitly cast to SharedUser to guarantee safety (hiding passwordHash)
+    const safeUser: SharedUser = {
+      id: user.id,
+      phoneNumber: user.phoneNumber,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: user.role,
+      createdAt: user.createdAt,
+      instructorId: user.instructorId
+    };
 
-    return { token, user: userWithoutPassword };
+    return { token, user: safeUser };
   }
 
   async requestMagicLink(phoneNumber: string): Promise<void> {
     const user = await prisma.user.findUnique({ where: { phoneNumber } });
     if (!user || user.role !== Role.STUDENT) {
-      throw new Error('Ученик с таким номером телефона не найден');
+      throw new Error('Student with this phone number was not found');
     }
 
-    // Срок действия ссылки — 15 минут
+    // Link expiration time — 15 minutes
     const expiresAt = new Date();
     expiresAt.setMinutes(expiresAt.getMinutes() + 15);
 
@@ -47,24 +58,25 @@ export class AuthServiceImpl implements IAuthService {
       },
     });
 
-    // Имитация отправки SMS для MVP (выводим в логи бэкенда)
-    const magicLink = `${process.env.WEB_APP_URL || 'http://localhost:3000'}/auth/verify?token=${magicRecord.token}`;
-    logger.info(`[SMS MOCK] На номер ${phoneNumber} отправлена ссылка: ${magicLink}`);
+    // SMS Simulation for MVP (printed to backend console logs)
+    const webAppUrl = process.env.WEB_APP_URL || 'http://localhost:3000';
+    const magicLink = `${webAppUrl}/auth/verify?token=${magicRecord.token}`;
+    logger.info(`[SMS MOCK] Sent to ${phoneNumber}: "Shalom! Access your DriveFlow schedule here: ${magicLink}"`);
   }
 
-  async verifyMagicLink(token: string): Promise<AuthResponse> {
+  async verifyMagicLink(token: string): Promise<AuthResponseDTO> {
     const magicRecord = await prisma.magicToken.findUnique({
       where: { token },
       include: { user: true },
     });
 
     if (!magicRecord) {
-      throw new Error('Недействительный или использованный токен');
+      throw new Error('Invalid or already used security token');
     }
 
     if (new Date() > magicRecord.expiresAt) {
       await prisma.magicToken.delete({ where: { id: magicRecord.id } });
-      throw new Error('Срок действия ссылки истек');
+      throw new Error('The login link has expired');
     }
 
     const sessionToken = jwt.sign(
@@ -73,10 +85,19 @@ export class AuthServiceImpl implements IAuthService {
       { expiresIn: '30d' }
     );
 
-    // Удаляем использованный токен из соображений безопасности
+    // Delete token immediately after use for security reasons
     await prisma.magicToken.delete({ where: { id: magicRecord.id } });
 
-    const { passwordHash, ...userWithoutPassword } = magicRecord.user;
-    return { token: sessionToken, user: userWithoutPassword };
+    const safeUser: SharedUser = {
+      id: magicRecord.user.id,
+      phoneNumber: magicRecord.user.phoneNumber,
+      firstName: magicRecord.user.firstName,
+      lastName: magicRecord.user.lastName,
+      role: magicRecord.user.role,
+      createdAt: magicRecord.user.createdAt,
+      instructorId: magicRecord.user.instructorId
+    };
+
+    return { token: sessionToken, user: safeUser };
   }
 }

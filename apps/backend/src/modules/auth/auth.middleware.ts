@@ -13,7 +13,7 @@ export function authenticateJwt(req: AuthenticatedRequest, res: Response, next: 
   const token = authHeader && authHeader.split(' ')[1];
 
   if (!token) {
-    res.status(401).json({ error: 'Токен авторизации отсутствует' });
+    res.status(401).json({ error: 'Authentication token is missing' });
     return;
   }
 
@@ -22,14 +22,14 @@ export function authenticateJwt(req: AuthenticatedRequest, res: Response, next: 
     req.user = decoded;
     next();
   } catch (err) {
-    res.status(403).json({ error: 'Недействительный или просроченный токен сессии' });
+    res.status(403).json({ error: 'Invalid or expired session token' });
   }
 }
 
 export function requireRole(role: Role) {
   return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
     if (!req.user || req.user.role !== role) {
-      res.status(403).json({ error: 'Доступ запрещен: недостаточно прав' });
+      res.status(403).json({ error: 'Access denied: insufficient permissions' });
       return;
     }
     next();

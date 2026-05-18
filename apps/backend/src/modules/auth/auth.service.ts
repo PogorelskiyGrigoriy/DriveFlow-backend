@@ -1,17 +1,12 @@
-import { User } from '@prisma/client';
-
-export interface AuthResponse {
-  token: string;
-  user: Omit<User, 'passwordHash'>;
-}
+import { AuthResponseDTO } from '@driveflow/shared';
 
 export interface IAuthService {
-  // Логин для учителя (Пароль)
-  loginInstructor(phoneNumber: string, passwordRaw: string): Promise<AuthResponse>;
+  // Login for instructors (Password)
+  loginInstructor(phoneNumber: string, passwordRaw: string): Promise<AuthResponseDTO>;
   
-  // Запрос Magic Link для ученика (SMS)
+  // Request Magic Link for students (SMS simulation)
   requestMagicLink(phoneNumber: string): Promise<void>;
   
-  // Верификация Magic Link при клике
-  verifyMagicLink(token: string): Promise<AuthResponse>;
+  // Verify Magic Link when clicked from URL
+  verifyMagicLink(token: string): Promise<AuthResponseDTO>;
 }
