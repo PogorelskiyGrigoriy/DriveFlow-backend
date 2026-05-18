@@ -3,6 +3,7 @@ import 'dotenv/config';
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import authRouter from './modules/auth/auth.routes.js';
+import slotRouter from './modules/slots/slot.routes.js';
 import logger from './utils/pino-logger.js';
 import { errorMiddleware } from './middlewares/error.middleware.js';
 
@@ -19,8 +20,9 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   next();
 });
 
-// Mount Authentication Routes
+// Mount Feature Routes
 app.use('/api/auth', authRouter);
+app.use('/api/slots', slotRouter);
 
 // Basic Health Check Route
 app.get('/health', (req: Request, res: Response) => {

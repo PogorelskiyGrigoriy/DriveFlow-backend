@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { Role } from '@prisma/client';
-import { UnauthorizedError, ForbiddenError } from '../../utils/app-errors.js';
+import { UnauthorizedError, ForbiddenError } from '../utils/app-errors.js';
 
 export interface AuthenticatedRequest extends Request {
   user?: { id: string; role: Role };
