@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { Role } from '@prisma/client';
+import { UnauthorizedError, ForbiddenError } from '../../utils/app-errors.js';
 
 export interface AuthenticatedRequest extends Request {
   user?: { id: string; role: Role };
@@ -13,8 +14,7 @@ export function authenticateJwt(req: AuthenticatedRequest, res: Response, next: 
   const token = authHeader && authHeader.split(' ')[1];
 
   if (!token) {
-    res.status(401).json({ error: 'Authentication token is missing' });
-    return;
+    return next(new UnauthorizedError('Authentication token is missing'));
   }
 
   try {
@@ -22,15 +22,14 @@ export function authenticateJwt(req: AuthenticatedRequest, res: Response, next: 
     req.user = decoded;
     next();
   } catch (err) {
-    res.status(403).json({ error: 'Invalid or expired session token' });
+    next(new UnauthorizedError('Invalid or expired session token'));
   }
 }
 
 export function requireRole(role: Role) {
   return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
     if (!req.user || req.user.role !== role) {
-      res.status(403).json({ error: 'Access denied: insufficient permissions' });
-      return;
+      return next(new ForbiddenError('Access denied: insufficient permissions'));
     }
     next();
   };
