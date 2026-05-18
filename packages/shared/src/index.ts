@@ -7,3 +7,6 @@ export * from './types/error.types.js';
 
 // Export slots management contracts
 export * from './modules/slots/index.js';
+
+// Export lessons management contracts
+export * from './modules/lessons/index.js';
