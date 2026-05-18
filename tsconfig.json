@@ -3,7 +3,6 @@
     "target": "ESNext",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "baseUrl": ".",
     "paths": {
       "@driveflow/shared": ["./packages/shared/src/index.ts"]
     },
