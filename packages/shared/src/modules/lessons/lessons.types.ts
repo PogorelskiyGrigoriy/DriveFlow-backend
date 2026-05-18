@@ -1,12 +1,18 @@
+import { LessonStatus } from '@prisma/client';
+
 /**
- * Unified server response after successfully booking a lesson
+ * Unified server response after successfully booking a lesson.
+ * Tailored for network transit (JSON format).
  */
 export interface LessonResponseDTO {
   id: string;
   instructorId: string;
   studentId: string;
-  startTime: string; // ISO 8601 string
+  startTime: string; 
   durationMin: number;
-  status: 'SCHEDULED' | 'COMPLETED' | 'CANCELLED';
-  createdAt: string; // ISO 8601 string
+  /**
+   * Tied directly to Prisma generated enum to avoid hardcoded duplication
+   */
+  status: LessonStatus;
+  createdAt: string; 
 }
