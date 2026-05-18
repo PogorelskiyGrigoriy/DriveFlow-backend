@@ -6,7 +6,6 @@ import { DATE_YYYY_MM_DD_REGEX } from '../../utils/validation-regex.js';
  */
 export const getAvailableSlotsQuerySchema = z.object({
   instructorId: z
-    .string()
     .uuid('Invalid instructor ID format'),
   date: z
     .string()

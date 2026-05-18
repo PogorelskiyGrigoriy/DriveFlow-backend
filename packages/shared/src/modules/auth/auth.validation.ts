@@ -29,7 +29,6 @@ export const requestMagicLinkSchema = z.object({
  */
 export const verifyMagicLinkSchema = z.object({
   token: z
-    .string()
     .uuid('Invalid security token format'),
 });
 

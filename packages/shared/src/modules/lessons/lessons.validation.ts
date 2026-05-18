@@ -5,13 +5,11 @@ import { z } from 'zod';
  */
 export const createLessonSchema = z.object({
   instructorId: z
-    .string()
     .uuid('Invalid instructor ID format'),
   studentId: z
-    .string()
     .uuid('Invalid student ID format'),
   startTime: z
-    .string()
+    .iso
     .datetime({ message: 'Start time must be a valid ISO 8601 datetime string' }),
 });
 
