@@ -4,6 +4,7 @@ import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import authRouter from './modules/auth/auth.routes.js';
 import slotRouter from './modules/slots/slot.routes.js';
+import lessonRouter from './modules/lessons/lesson.routes.js';
 import logger from './utils/pino-logger.js';
 import { errorMiddleware } from './middlewares/error.middleware.js';
 
@@ -23,6 +24,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 // Mount Feature Routes
 app.use('/api/auth', authRouter);
 app.use('/api/slots', slotRouter);
+app.use('/api/lessons', lessonRouter);
 
 // Basic Health Check Route
 app.get('/health', (req: Request, res: Response) => {
