@@ -49,4 +49,33 @@ export class LessonController {
     // 5. Respond with 200 OK and the updated lesson DTO
     res.status(200).json(result);
   };
+
+  /**
+   * HTTP Handler to get personal lessons for the logged-in student.
+   * Expected route: GET /api/lessons/my
+   */
+  getUserLessons = async (req: Request, res: Response): Promise<void> => {
+    const user = (req as any).user;
+    
+    const result = await this.lessonService.getUserLessons(user.id);
+    res.status(200).json(result);
+  };
+
+  /**
+   * HTTP Handler to get an instructor's linear schedule for a specific day.
+   * Expected route: GET /api/lessons/schedule?date=YYYY-MM-DD
+   */
+  getInstructorSchedule = async (req: Request, res: Response): Promise<void> => {
+    const user = (req as any).user;
+    const dateStr = req.query.date as string;
+
+    if (!dateStr) {
+      res.status(400).json({ error: 'Query parameter "date" is required.' });
+      return;
+    }
+
+    // Pass the instructor's ID and the date string to the service
+    const result = await this.lessonService.getInstructorSchedule(user.id, dateStr);
+    res.status(200).json(result);
+  };
 }

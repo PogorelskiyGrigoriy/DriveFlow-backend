@@ -1,6 +1,6 @@
 import { ILessonService } from './lesson.service.js';
 import { prisma } from '../../infrastructure/db.js';
-import { CreateLessonInput, LessonResponseDTO, UpdateLessonStatusInput } from '@driveflow/shared';
+import { CreateLessonInput, LessonResponseDTO, UpdateLessonStatusInput, DATE_YYYY_MM_DD_REGEX } from '@driveflow/shared';
 import { LessonStatus, Role, Lesson } from '@prisma/client';
 import { ValidationError, ConflictError, NotFoundError, ForbiddenError } from '../../utils/app-errors.js';
 
@@ -116,6 +116,44 @@ export class LessonServiceImpl implements ILessonService {
     });
 
     return this.mapToResponseDTO(updatedLesson);
+  }
+
+  /**
+   * Retrieves all lessons for a specific student, ordered by upcoming first.
+   */
+  async getUserLessons(userId: string): Promise<LessonResponseDTO[]> {
+    const lessons = await prisma.lesson.findMany({
+      where: { studentId: userId },
+      orderBy: { startTime: 'asc' }, 
+    });
+
+    return lessons.map(lesson => this.mapToResponseDTO(lesson));
+  }
+
+  /**
+   * Retrieves all lessons for an instructor on a specific calendar day.
+   * Expects dateStr in YYYY-MM-DD format.
+   */
+  async getInstructorSchedule(instructorId: string, dateStr: string): Promise<LessonResponseDTO[]> {
+    if (!DATE_YYYY_MM_DD_REGEX.test(dateStr)) {
+      throw new ValidationError('Invalid date format. Expected YYYY-MM-DD.');
+    }
+
+    const startOfDay = new Date(`${dateStr}T00:00:00.000Z`);
+    const endOfDay = new Date(`${dateStr}T23:59:59.999Z`);
+
+    const lessons = await prisma.lesson.findMany({
+      where: {
+        instructorId,
+        startTime: {
+          gte: startOfDay,
+          lte: endOfDay,
+        },
+      },
+      orderBy: { startTime: 'asc' }, 
+    });
+
+    return lessons.map(lesson => this.mapToResponseDTO(lesson));
   }
 
   /**
