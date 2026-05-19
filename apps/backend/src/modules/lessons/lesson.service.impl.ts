@@ -24,10 +24,11 @@ export class LessonServiceImpl implements ILessonService {
       throw new ValidationError('The instructor does not have a working schedule configured for this day.');
     }
 
-    // 2. Validate boundaries
-    if (lessonHour < availability.startHour || lessonHour >= availability.endHour) {
+    // 2. Validate boundaries using the new hours array structure
+    // Ensures the requested hour explicitly exists within the instructor's custom shifts/slots
+    if (!availability.hours.includes(lessonHour)) {
       throw new ValidationError(
-        `Requested hour ${lessonHour}:00 is outside the instructor's working shift (${availability.startHour}:00 - ${availability.endHour}:00).`
+        `Requested hour ${String(lessonHour).padStart(2, '0')}:00 is not within the instructor's scheduled working hours for this day.`
       );
     }
 
