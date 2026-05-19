@@ -10,3 +10,6 @@ export * from './modules/slots/index.js';
 
 // Export lessons management contracts
 export * from './modules/lessons/index.js';
+
+// Export availability management contracts
+export * from './modules/availability/index.js';
