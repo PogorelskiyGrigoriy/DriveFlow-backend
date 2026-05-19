@@ -13,6 +13,10 @@ export class AuthServiceImpl implements IAuthService {
   async loginInstructor(phoneNumber: string, passwordRaw: string): Promise<AuthResponseDTO> {
     const user = await prisma.user.findUnique({ where: { phoneNumber } });
 
+    if (!user || user.role !== Role.INSTRUCTOR || user.deletedAt !== null) {
+      throw new UnauthorizedError('Invalid phone number or insufficient permissions');
+    }
+
     if (!user || user.role !== Role.INSTRUCTOR) {
       throw new UnauthorizedError('Invalid phone number or insufficient permissions');
     }
@@ -35,7 +39,8 @@ export class AuthServiceImpl implements IAuthService {
       lastName: user.lastName,
       role: user.role,
       createdAt: user.createdAt,
-      instructorId: user.instructorId
+      instructorId: user.instructorId,
+      deletedAt: user.deletedAt
     };
 
     return { token, user: safeUser };
@@ -43,6 +48,10 @@ export class AuthServiceImpl implements IAuthService {
 
   async requestMagicLink(phoneNumber: string): Promise<void> {
     const user = await prisma.user.findUnique({ where: { phoneNumber } });
+
+    if (!user || user.role !== Role.STUDENT || user.deletedAt !== null) {
+      throw new AppError('Student with this phone number was not found', 404, 'NOT_FOUND');
+    }
     
     if (!user || user.role !== Role.STUDENT) {
       throw new AppError('Student with this phone number was not found', 404, 'NOT_FOUND');
@@ -93,7 +102,8 @@ export class AuthServiceImpl implements IAuthService {
       lastName: magicRecord.user.lastName,
       role: magicRecord.user.role,
       createdAt: magicRecord.user.createdAt,
-      instructorId: magicRecord.user.instructorId
+      instructorId: magicRecord.user.instructorId,
+      deletedAt: magicRecord.user.deletedAt
     };
 
     return { token: sessionToken, user: safeUser };

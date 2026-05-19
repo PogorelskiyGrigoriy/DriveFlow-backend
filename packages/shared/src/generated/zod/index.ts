@@ -12,7 +12,7 @@ import type { Prisma } from '@prisma/client';
 
 export const TransactionIsolationLevelSchema = z.enum(['ReadUncommitted','ReadCommitted','RepeatableRead','Serializable']);
 
-export const UserScalarFieldEnumSchema = z.enum(['id','phoneNumber','passwordHash','firstName','lastName','role','createdAt','instructorId']);
+export const UserScalarFieldEnumSchema = z.enum(['id','phoneNumber','passwordHash','firstName','lastName','role','createdAt','deletedAt','instructorId']);
 
 export const InstructorAvailabilityScalarFieldEnumSchema = z.enum(['id','instructorId','dayOfWeek','hours']);
 
@@ -45,11 +45,12 @@ export type LessonStatusType = `${z.infer<typeof LessonStatusSchema>}`
 export const UserSchema = z.object({
   role: RoleSchema,
   id: z.uuid(),
-  phoneNumber: z.string(),
+  phoneNumber: z.string().nullable(),
   passwordHash: z.string().nullable(),
   firstName: z.string(),
   lastName: z.string(),
   createdAt: z.coerce.date(),
+  deletedAt: z.coerce.date().nullable(),
   instructorId: z.string().nullable(),
 })
 
@@ -140,6 +141,7 @@ export const UserSelectSchema: z.ZodType<Prisma.UserSelect> = z.object({
   lastName: z.boolean().optional(),
   role: z.boolean().optional(),
   createdAt: z.boolean().optional(),
+  deletedAt: z.boolean().optional(),
   instructorId: z.boolean().optional(),
   instructor: z.union([z.boolean(),z.lazy(() => UserArgsSchema)]).optional(),
   students: z.union([z.boolean(),z.lazy(() => UserFindManyArgsSchema)]).optional(),
@@ -226,12 +228,13 @@ export const UserWhereInputSchema: z.ZodType<Prisma.UserWhereInput> = z.strictOb
   OR: z.lazy(() => UserWhereInputSchema).array().optional(),
   NOT: z.union([ z.lazy(() => UserWhereInputSchema), z.lazy(() => UserWhereInputSchema).array() ]).optional(),
   id: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
-  phoneNumber: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
+  phoneNumber: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
   passwordHash: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
   firstName: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
   lastName: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
   role: z.union([ z.lazy(() => EnumRoleFilterSchema), z.lazy(() => RoleSchema) ]).optional(),
   createdAt: z.union([ z.lazy(() => DateTimeFilterSchema), z.coerce.date() ]).optional(),
+  deletedAt: z.union([ z.lazy(() => DateTimeNullableFilterSchema), z.coerce.date() ]).optional().nullable(),
   instructorId: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
   instructor: z.union([ z.lazy(() => UserNullableScalarRelationFilterSchema), z.lazy(() => UserWhereInputSchema) ]).optional().nullable(),
   students: z.lazy(() => UserListRelationFilterSchema).optional(),
@@ -243,12 +246,13 @@ export const UserWhereInputSchema: z.ZodType<Prisma.UserWhereInput> = z.strictOb
 
 export const UserOrderByWithRelationInputSchema: z.ZodType<Prisma.UserOrderByWithRelationInput> = z.strictObject({
   id: z.lazy(() => SortOrderSchema).optional(),
-  phoneNumber: z.lazy(() => SortOrderSchema).optional(),
+  phoneNumber: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
   passwordHash: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
   firstName: z.lazy(() => SortOrderSchema).optional(),
   lastName: z.lazy(() => SortOrderSchema).optional(),
   role: z.lazy(() => SortOrderSchema).optional(),
   createdAt: z.lazy(() => SortOrderSchema).optional(),
+  deletedAt: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
   instructorId: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
   instructor: z.lazy(() => UserOrderByWithRelationInputSchema).optional(),
   students: z.lazy(() => UserOrderByRelationAggregateInputSchema).optional(),
@@ -281,6 +285,7 @@ export const UserWhereUniqueInputSchema: z.ZodType<Prisma.UserWhereUniqueInput> 
   lastName: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
   role: z.union([ z.lazy(() => EnumRoleFilterSchema), z.lazy(() => RoleSchema) ]).optional(),
   createdAt: z.union([ z.lazy(() => DateTimeFilterSchema), z.coerce.date() ]).optional(),
+  deletedAt: z.union([ z.lazy(() => DateTimeNullableFilterSchema), z.coerce.date() ]).optional().nullable(),
   instructorId: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
   instructor: z.union([ z.lazy(() => UserNullableScalarRelationFilterSchema), z.lazy(() => UserWhereInputSchema) ]).optional().nullable(),
   students: z.lazy(() => UserListRelationFilterSchema).optional(),
@@ -292,12 +297,13 @@ export const UserWhereUniqueInputSchema: z.ZodType<Prisma.UserWhereUniqueInput> 
 
 export const UserOrderByWithAggregationInputSchema: z.ZodType<Prisma.UserOrderByWithAggregationInput> = z.strictObject({
   id: z.lazy(() => SortOrderSchema).optional(),
-  phoneNumber: z.lazy(() => SortOrderSchema).optional(),
+  phoneNumber: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
   passwordHash: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
   firstName: z.lazy(() => SortOrderSchema).optional(),
   lastName: z.lazy(() => SortOrderSchema).optional(),
   role: z.lazy(() => SortOrderSchema).optional(),
   createdAt: z.lazy(() => SortOrderSchema).optional(),
+  deletedAt: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
   instructorId: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
   _count: z.lazy(() => UserCountOrderByAggregateInputSchema).optional(),
   _max: z.lazy(() => UserMaxOrderByAggregateInputSchema).optional(),
@@ -309,12 +315,13 @@ export const UserScalarWhereWithAggregatesInputSchema: z.ZodType<Prisma.UserScal
   OR: z.lazy(() => UserScalarWhereWithAggregatesInputSchema).array().optional(),
   NOT: z.union([ z.lazy(() => UserScalarWhereWithAggregatesInputSchema), z.lazy(() => UserScalarWhereWithAggregatesInputSchema).array() ]).optional(),
   id: z.union([ z.lazy(() => StringWithAggregatesFilterSchema), z.string() ]).optional(),
-  phoneNumber: z.union([ z.lazy(() => StringWithAggregatesFilterSchema), z.string() ]).optional(),
+  phoneNumber: z.union([ z.lazy(() => StringNullableWithAggregatesFilterSchema), z.string() ]).optional().nullable(),
   passwordHash: z.union([ z.lazy(() => StringNullableWithAggregatesFilterSchema), z.string() ]).optional().nullable(),
   firstName: z.union([ z.lazy(() => StringWithAggregatesFilterSchema), z.string() ]).optional(),
   lastName: z.union([ z.lazy(() => StringWithAggregatesFilterSchema), z.string() ]).optional(),
   role: z.union([ z.lazy(() => EnumRoleWithAggregatesFilterSchema), z.lazy(() => RoleSchema) ]).optional(),
   createdAt: z.union([ z.lazy(() => DateTimeWithAggregatesFilterSchema), z.coerce.date() ]).optional(),
+  deletedAt: z.union([ z.lazy(() => DateTimeNullableWithAggregatesFilterSchema), z.coerce.date() ]).optional().nullable(),
   instructorId: z.union([ z.lazy(() => StringNullableWithAggregatesFilterSchema), z.string() ]).optional().nullable(),
 });
 
@@ -535,12 +542,13 @@ export const MagicTokenScalarWhereWithAggregatesInputSchema: z.ZodType<Prisma.Ma
 
 export const UserCreateInputSchema: z.ZodType<Prisma.UserCreateInput> = z.strictObject({
   id: z.uuid().optional(),
-  phoneNumber: z.string(),
+  phoneNumber: z.string().optional().nullable(),
   passwordHash: z.string().optional().nullable(),
   firstName: z.string(),
   lastName: z.string(),
   role: z.lazy(() => RoleSchema).optional(),
   createdAt: z.coerce.date().optional(),
+  deletedAt: z.coerce.date().optional().nullable(),
   instructor: z.lazy(() => UserCreateNestedOneWithoutStudentsInputSchema).optional(),
   students: z.lazy(() => UserCreateNestedManyWithoutInstructorInputSchema).optional(),
   lessonsAsInstructor: z.lazy(() => LessonCreateNestedManyWithoutInstructorInputSchema).optional(),
@@ -551,12 +559,13 @@ export const UserCreateInputSchema: z.ZodType<Prisma.UserCreateInput> = z.strict
 
 export const UserUncheckedCreateInputSchema: z.ZodType<Prisma.UserUncheckedCreateInput> = z.strictObject({
   id: z.uuid().optional(),
-  phoneNumber: z.string(),
+  phoneNumber: z.string().optional().nullable(),
   passwordHash: z.string().optional().nullable(),
   firstName: z.string(),
   lastName: z.string(),
   role: z.lazy(() => RoleSchema).optional(),
   createdAt: z.coerce.date().optional(),
+  deletedAt: z.coerce.date().optional().nullable(),
   instructorId: z.string().optional().nullable(),
   students: z.lazy(() => UserUncheckedCreateNestedManyWithoutInstructorInputSchema).optional(),
   lessonsAsInstructor: z.lazy(() => LessonUncheckedCreateNestedManyWithoutInstructorInputSchema).optional(),
@@ -567,12 +576,13 @@ export const UserUncheckedCreateInputSchema: z.ZodType<Prisma.UserUncheckedCreat
 
 export const UserUpdateInputSchema: z.ZodType<Prisma.UserUpdateInput> = z.strictObject({
   id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
-  phoneNumber: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  phoneNumber: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   passwordHash: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   firstName: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   lastName: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   role: z.union([ z.lazy(() => RoleSchema), z.lazy(() => EnumRoleFieldUpdateOperationsInputSchema) ]).optional(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  deletedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   instructor: z.lazy(() => UserUpdateOneWithoutStudentsNestedInputSchema).optional(),
   students: z.lazy(() => UserUpdateManyWithoutInstructorNestedInputSchema).optional(),
   lessonsAsInstructor: z.lazy(() => LessonUpdateManyWithoutInstructorNestedInputSchema).optional(),
@@ -583,12 +593,13 @@ export const UserUpdateInputSchema: z.ZodType<Prisma.UserUpdateInput> = z.strict
 
 export const UserUncheckedUpdateInputSchema: z.ZodType<Prisma.UserUncheckedUpdateInput> = z.strictObject({
   id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
-  phoneNumber: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  phoneNumber: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   passwordHash: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   firstName: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   lastName: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   role: z.union([ z.lazy(() => RoleSchema), z.lazy(() => EnumRoleFieldUpdateOperationsInputSchema) ]).optional(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  deletedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   instructorId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   students: z.lazy(() => UserUncheckedUpdateManyWithoutInstructorNestedInputSchema).optional(),
   lessonsAsInstructor: z.lazy(() => LessonUncheckedUpdateManyWithoutInstructorNestedInputSchema).optional(),
@@ -599,33 +610,36 @@ export const UserUncheckedUpdateInputSchema: z.ZodType<Prisma.UserUncheckedUpdat
 
 export const UserCreateManyInputSchema: z.ZodType<Prisma.UserCreateManyInput> = z.strictObject({
   id: z.uuid().optional(),
-  phoneNumber: z.string(),
+  phoneNumber: z.string().optional().nullable(),
   passwordHash: z.string().optional().nullable(),
   firstName: z.string(),
   lastName: z.string(),
   role: z.lazy(() => RoleSchema).optional(),
   createdAt: z.coerce.date().optional(),
+  deletedAt: z.coerce.date().optional().nullable(),
   instructorId: z.string().optional().nullable(),
 });
 
 export const UserUpdateManyMutationInputSchema: z.ZodType<Prisma.UserUpdateManyMutationInput> = z.strictObject({
   id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
-  phoneNumber: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  phoneNumber: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   passwordHash: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   firstName: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   lastName: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   role: z.union([ z.lazy(() => RoleSchema), z.lazy(() => EnumRoleFieldUpdateOperationsInputSchema) ]).optional(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  deletedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
 });
 
 export const UserUncheckedUpdateManyInputSchema: z.ZodType<Prisma.UserUncheckedUpdateManyInput> = z.strictObject({
   id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
-  phoneNumber: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  phoneNumber: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   passwordHash: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   firstName: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   lastName: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   role: z.union([ z.lazy(() => RoleSchema), z.lazy(() => EnumRoleFieldUpdateOperationsInputSchema) ]).optional(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  deletedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   instructorId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
 });
 
@@ -848,6 +862,17 @@ export const DateTimeFilterSchema: z.ZodType<Prisma.DateTimeFilter> = z.strictOb
   not: z.union([ z.coerce.date(),z.lazy(() => NestedDateTimeFilterSchema) ]).optional(),
 });
 
+export const DateTimeNullableFilterSchema: z.ZodType<Prisma.DateTimeNullableFilter> = z.strictObject({
+  equals: z.coerce.date().optional().nullable(),
+  in: z.coerce.date().array().optional().nullable(),
+  notIn: z.coerce.date().array().optional().nullable(),
+  lt: z.coerce.date().optional(),
+  lte: z.coerce.date().optional(),
+  gt: z.coerce.date().optional(),
+  gte: z.coerce.date().optional(),
+  not: z.union([ z.coerce.date(),z.lazy(() => NestedDateTimeNullableFilterSchema) ]).optional().nullable(),
+});
+
 export const UserNullableScalarRelationFilterSchema: z.ZodType<Prisma.UserNullableScalarRelationFilter> = z.strictObject({
   is: z.lazy(() => UserWhereInputSchema).optional().nullable(),
   isNot: z.lazy(() => UserWhereInputSchema).optional().nullable(),
@@ -906,6 +931,7 @@ export const UserCountOrderByAggregateInputSchema: z.ZodType<Prisma.UserCountOrd
   lastName: z.lazy(() => SortOrderSchema).optional(),
   role: z.lazy(() => SortOrderSchema).optional(),
   createdAt: z.lazy(() => SortOrderSchema).optional(),
+  deletedAt: z.lazy(() => SortOrderSchema).optional(),
   instructorId: z.lazy(() => SortOrderSchema).optional(),
 });
 
@@ -917,6 +943,7 @@ export const UserMaxOrderByAggregateInputSchema: z.ZodType<Prisma.UserMaxOrderBy
   lastName: z.lazy(() => SortOrderSchema).optional(),
   role: z.lazy(() => SortOrderSchema).optional(),
   createdAt: z.lazy(() => SortOrderSchema).optional(),
+  deletedAt: z.lazy(() => SortOrderSchema).optional(),
   instructorId: z.lazy(() => SortOrderSchema).optional(),
 });
 
@@ -928,6 +955,7 @@ export const UserMinOrderByAggregateInputSchema: z.ZodType<Prisma.UserMinOrderBy
   lastName: z.lazy(() => SortOrderSchema).optional(),
   role: z.lazy(() => SortOrderSchema).optional(),
   createdAt: z.lazy(() => SortOrderSchema).optional(),
+  deletedAt: z.lazy(() => SortOrderSchema).optional(),
   instructorId: z.lazy(() => SortOrderSchema).optional(),
 });
 
@@ -989,6 +1017,20 @@ export const DateTimeWithAggregatesFilterSchema: z.ZodType<Prisma.DateTimeWithAg
   _count: z.lazy(() => NestedIntFilterSchema).optional(),
   _min: z.lazy(() => NestedDateTimeFilterSchema).optional(),
   _max: z.lazy(() => NestedDateTimeFilterSchema).optional(),
+});
+
+export const DateTimeNullableWithAggregatesFilterSchema: z.ZodType<Prisma.DateTimeNullableWithAggregatesFilter> = z.strictObject({
+  equals: z.coerce.date().optional().nullable(),
+  in: z.coerce.date().array().optional().nullable(),
+  notIn: z.coerce.date().array().optional().nullable(),
+  lt: z.coerce.date().optional(),
+  lte: z.coerce.date().optional(),
+  gt: z.coerce.date().optional(),
+  gte: z.coerce.date().optional(),
+  not: z.union([ z.coerce.date(),z.lazy(() => NestedDateTimeNullableWithAggregatesFilterSchema) ]).optional().nullable(),
+  _count: z.lazy(() => NestedIntNullableFilterSchema).optional(),
+  _min: z.lazy(() => NestedDateTimeNullableFilterSchema).optional(),
+  _max: z.lazy(() => NestedDateTimeNullableFilterSchema).optional(),
 });
 
 export const IntFilterSchema: z.ZodType<Prisma.IntFilter> = z.strictObject({
@@ -1239,6 +1281,10 @@ export const EnumRoleFieldUpdateOperationsInputSchema: z.ZodType<Prisma.EnumRole
 
 export const DateTimeFieldUpdateOperationsInputSchema: z.ZodType<Prisma.DateTimeFieldUpdateOperationsInput> = z.strictObject({
   set: z.coerce.date().optional(),
+});
+
+export const NullableDateTimeFieldUpdateOperationsInputSchema: z.ZodType<Prisma.NullableDateTimeFieldUpdateOperationsInput> = z.strictObject({
+  set: z.coerce.date().optional().nullable(),
 });
 
 export const UserUpdateOneWithoutStudentsNestedInputSchema: z.ZodType<Prisma.UserUpdateOneWithoutStudentsNestedInput> = z.strictObject({
@@ -1514,6 +1560,17 @@ export const NestedDateTimeFilterSchema: z.ZodType<Prisma.NestedDateTimeFilter> 
   not: z.union([ z.coerce.date(),z.lazy(() => NestedDateTimeFilterSchema) ]).optional(),
 });
 
+export const NestedDateTimeNullableFilterSchema: z.ZodType<Prisma.NestedDateTimeNullableFilter> = z.strictObject({
+  equals: z.coerce.date().optional().nullable(),
+  in: z.coerce.date().array().optional().nullable(),
+  notIn: z.coerce.date().array().optional().nullable(),
+  lt: z.coerce.date().optional(),
+  lte: z.coerce.date().optional(),
+  gt: z.coerce.date().optional(),
+  gte: z.coerce.date().optional(),
+  not: z.union([ z.coerce.date(),z.lazy(() => NestedDateTimeNullableFilterSchema) ]).optional().nullable(),
+});
+
 export const NestedStringWithAggregatesFilterSchema: z.ZodType<Prisma.NestedStringWithAggregatesFilter> = z.strictObject({
   equals: z.string().optional(),
   in: z.string().array().optional(),
@@ -1594,6 +1651,20 @@ export const NestedDateTimeWithAggregatesFilterSchema: z.ZodType<Prisma.NestedDa
   _max: z.lazy(() => NestedDateTimeFilterSchema).optional(),
 });
 
+export const NestedDateTimeNullableWithAggregatesFilterSchema: z.ZodType<Prisma.NestedDateTimeNullableWithAggregatesFilter> = z.strictObject({
+  equals: z.coerce.date().optional().nullable(),
+  in: z.coerce.date().array().optional().nullable(),
+  notIn: z.coerce.date().array().optional().nullable(),
+  lt: z.coerce.date().optional(),
+  lte: z.coerce.date().optional(),
+  gt: z.coerce.date().optional(),
+  gte: z.coerce.date().optional(),
+  not: z.union([ z.coerce.date(),z.lazy(() => NestedDateTimeNullableWithAggregatesFilterSchema) ]).optional().nullable(),
+  _count: z.lazy(() => NestedIntNullableFilterSchema).optional(),
+  _min: z.lazy(() => NestedDateTimeNullableFilterSchema).optional(),
+  _max: z.lazy(() => NestedDateTimeNullableFilterSchema).optional(),
+});
+
 export const NestedIntWithAggregatesFilterSchema: z.ZodType<Prisma.NestedIntWithAggregatesFilter> = z.strictObject({
   equals: z.number().optional(),
   in: z.number().array().optional(),
@@ -1640,12 +1711,13 @@ export const NestedEnumLessonStatusWithAggregatesFilterSchema: z.ZodType<Prisma.
 
 export const UserCreateWithoutStudentsInputSchema: z.ZodType<Prisma.UserCreateWithoutStudentsInput> = z.strictObject({
   id: z.uuid().optional(),
-  phoneNumber: z.string(),
+  phoneNumber: z.string().optional().nullable(),
   passwordHash: z.string().optional().nullable(),
   firstName: z.string(),
   lastName: z.string(),
   role: z.lazy(() => RoleSchema).optional(),
   createdAt: z.coerce.date().optional(),
+  deletedAt: z.coerce.date().optional().nullable(),
   instructor: z.lazy(() => UserCreateNestedOneWithoutStudentsInputSchema).optional(),
   lessonsAsInstructor: z.lazy(() => LessonCreateNestedManyWithoutInstructorInputSchema).optional(),
   lessonsAsStudent: z.lazy(() => LessonCreateNestedManyWithoutStudentInputSchema).optional(),
@@ -1655,12 +1727,13 @@ export const UserCreateWithoutStudentsInputSchema: z.ZodType<Prisma.UserCreateWi
 
 export const UserUncheckedCreateWithoutStudentsInputSchema: z.ZodType<Prisma.UserUncheckedCreateWithoutStudentsInput> = z.strictObject({
   id: z.uuid().optional(),
-  phoneNumber: z.string(),
+  phoneNumber: z.string().optional().nullable(),
   passwordHash: z.string().optional().nullable(),
   firstName: z.string(),
   lastName: z.string(),
   role: z.lazy(() => RoleSchema).optional(),
   createdAt: z.coerce.date().optional(),
+  deletedAt: z.coerce.date().optional().nullable(),
   instructorId: z.string().optional().nullable(),
   lessonsAsInstructor: z.lazy(() => LessonUncheckedCreateNestedManyWithoutInstructorInputSchema).optional(),
   lessonsAsStudent: z.lazy(() => LessonUncheckedCreateNestedManyWithoutStudentInputSchema).optional(),
@@ -1675,12 +1748,13 @@ export const UserCreateOrConnectWithoutStudentsInputSchema: z.ZodType<Prisma.Use
 
 export const UserCreateWithoutInstructorInputSchema: z.ZodType<Prisma.UserCreateWithoutInstructorInput> = z.strictObject({
   id: z.uuid().optional(),
-  phoneNumber: z.string(),
+  phoneNumber: z.string().optional().nullable(),
   passwordHash: z.string().optional().nullable(),
   firstName: z.string(),
   lastName: z.string(),
   role: z.lazy(() => RoleSchema).optional(),
   createdAt: z.coerce.date().optional(),
+  deletedAt: z.coerce.date().optional().nullable(),
   students: z.lazy(() => UserCreateNestedManyWithoutInstructorInputSchema).optional(),
   lessonsAsInstructor: z.lazy(() => LessonCreateNestedManyWithoutInstructorInputSchema).optional(),
   lessonsAsStudent: z.lazy(() => LessonCreateNestedManyWithoutStudentInputSchema).optional(),
@@ -1690,12 +1764,13 @@ export const UserCreateWithoutInstructorInputSchema: z.ZodType<Prisma.UserCreate
 
 export const UserUncheckedCreateWithoutInstructorInputSchema: z.ZodType<Prisma.UserUncheckedCreateWithoutInstructorInput> = z.strictObject({
   id: z.uuid().optional(),
-  phoneNumber: z.string(),
+  phoneNumber: z.string().optional().nullable(),
   passwordHash: z.string().optional().nullable(),
   firstName: z.string(),
   lastName: z.string(),
   role: z.lazy(() => RoleSchema).optional(),
   createdAt: z.coerce.date().optional(),
+  deletedAt: z.coerce.date().optional().nullable(),
   students: z.lazy(() => UserUncheckedCreateNestedManyWithoutInstructorInputSchema).optional(),
   lessonsAsInstructor: z.lazy(() => LessonUncheckedCreateNestedManyWithoutInstructorInputSchema).optional(),
   lessonsAsStudent: z.lazy(() => LessonUncheckedCreateNestedManyWithoutStudentInputSchema).optional(),
@@ -1828,12 +1903,13 @@ export const UserUpdateToOneWithWhereWithoutStudentsInputSchema: z.ZodType<Prism
 
 export const UserUpdateWithoutStudentsInputSchema: z.ZodType<Prisma.UserUpdateWithoutStudentsInput> = z.strictObject({
   id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
-  phoneNumber: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  phoneNumber: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   passwordHash: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   firstName: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   lastName: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   role: z.union([ z.lazy(() => RoleSchema), z.lazy(() => EnumRoleFieldUpdateOperationsInputSchema) ]).optional(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  deletedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   instructor: z.lazy(() => UserUpdateOneWithoutStudentsNestedInputSchema).optional(),
   lessonsAsInstructor: z.lazy(() => LessonUpdateManyWithoutInstructorNestedInputSchema).optional(),
   lessonsAsStudent: z.lazy(() => LessonUpdateManyWithoutStudentNestedInputSchema).optional(),
@@ -1843,12 +1919,13 @@ export const UserUpdateWithoutStudentsInputSchema: z.ZodType<Prisma.UserUpdateWi
 
 export const UserUncheckedUpdateWithoutStudentsInputSchema: z.ZodType<Prisma.UserUncheckedUpdateWithoutStudentsInput> = z.strictObject({
   id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
-  phoneNumber: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  phoneNumber: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   passwordHash: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   firstName: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   lastName: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   role: z.union([ z.lazy(() => RoleSchema), z.lazy(() => EnumRoleFieldUpdateOperationsInputSchema) ]).optional(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  deletedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   instructorId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   lessonsAsInstructor: z.lazy(() => LessonUncheckedUpdateManyWithoutInstructorNestedInputSchema).optional(),
   lessonsAsStudent: z.lazy(() => LessonUncheckedUpdateManyWithoutStudentNestedInputSchema).optional(),
@@ -1877,12 +1954,13 @@ export const UserScalarWhereInputSchema: z.ZodType<Prisma.UserScalarWhereInput> 
   OR: z.lazy(() => UserScalarWhereInputSchema).array().optional(),
   NOT: z.union([ z.lazy(() => UserScalarWhereInputSchema), z.lazy(() => UserScalarWhereInputSchema).array() ]).optional(),
   id: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
-  phoneNumber: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
+  phoneNumber: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
   passwordHash: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
   firstName: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
   lastName: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
   role: z.union([ z.lazy(() => EnumRoleFilterSchema), z.lazy(() => RoleSchema) ]).optional(),
   createdAt: z.union([ z.lazy(() => DateTimeFilterSchema), z.coerce.date() ]).optional(),
+  deletedAt: z.union([ z.lazy(() => DateTimeNullableFilterSchema), z.coerce.date() ]).optional().nullable(),
   instructorId: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
 });
 
@@ -1986,12 +2064,13 @@ export const MagicTokenScalarWhereInputSchema: z.ZodType<Prisma.MagicTokenScalar
 
 export const UserCreateWithoutAvailabilitiesInputSchema: z.ZodType<Prisma.UserCreateWithoutAvailabilitiesInput> = z.strictObject({
   id: z.uuid().optional(),
-  phoneNumber: z.string(),
+  phoneNumber: z.string().optional().nullable(),
   passwordHash: z.string().optional().nullable(),
   firstName: z.string(),
   lastName: z.string(),
   role: z.lazy(() => RoleSchema).optional(),
   createdAt: z.coerce.date().optional(),
+  deletedAt: z.coerce.date().optional().nullable(),
   instructor: z.lazy(() => UserCreateNestedOneWithoutStudentsInputSchema).optional(),
   students: z.lazy(() => UserCreateNestedManyWithoutInstructorInputSchema).optional(),
   lessonsAsInstructor: z.lazy(() => LessonCreateNestedManyWithoutInstructorInputSchema).optional(),
@@ -2001,12 +2080,13 @@ export const UserCreateWithoutAvailabilitiesInputSchema: z.ZodType<Prisma.UserCr
 
 export const UserUncheckedCreateWithoutAvailabilitiesInputSchema: z.ZodType<Prisma.UserUncheckedCreateWithoutAvailabilitiesInput> = z.strictObject({
   id: z.uuid().optional(),
-  phoneNumber: z.string(),
+  phoneNumber: z.string().optional().nullable(),
   passwordHash: z.string().optional().nullable(),
   firstName: z.string(),
   lastName: z.string(),
   role: z.lazy(() => RoleSchema).optional(),
   createdAt: z.coerce.date().optional(),
+  deletedAt: z.coerce.date().optional().nullable(),
   instructorId: z.string().optional().nullable(),
   students: z.lazy(() => UserUncheckedCreateNestedManyWithoutInstructorInputSchema).optional(),
   lessonsAsInstructor: z.lazy(() => LessonUncheckedCreateNestedManyWithoutInstructorInputSchema).optional(),
@@ -2032,12 +2112,13 @@ export const UserUpdateToOneWithWhereWithoutAvailabilitiesInputSchema: z.ZodType
 
 export const UserUpdateWithoutAvailabilitiesInputSchema: z.ZodType<Prisma.UserUpdateWithoutAvailabilitiesInput> = z.strictObject({
   id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
-  phoneNumber: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  phoneNumber: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   passwordHash: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   firstName: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   lastName: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   role: z.union([ z.lazy(() => RoleSchema), z.lazy(() => EnumRoleFieldUpdateOperationsInputSchema) ]).optional(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  deletedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   instructor: z.lazy(() => UserUpdateOneWithoutStudentsNestedInputSchema).optional(),
   students: z.lazy(() => UserUpdateManyWithoutInstructorNestedInputSchema).optional(),
   lessonsAsInstructor: z.lazy(() => LessonUpdateManyWithoutInstructorNestedInputSchema).optional(),
@@ -2047,12 +2128,13 @@ export const UserUpdateWithoutAvailabilitiesInputSchema: z.ZodType<Prisma.UserUp
 
 export const UserUncheckedUpdateWithoutAvailabilitiesInputSchema: z.ZodType<Prisma.UserUncheckedUpdateWithoutAvailabilitiesInput> = z.strictObject({
   id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
-  phoneNumber: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  phoneNumber: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   passwordHash: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   firstName: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   lastName: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   role: z.union([ z.lazy(() => RoleSchema), z.lazy(() => EnumRoleFieldUpdateOperationsInputSchema) ]).optional(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  deletedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   instructorId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   students: z.lazy(() => UserUncheckedUpdateManyWithoutInstructorNestedInputSchema).optional(),
   lessonsAsInstructor: z.lazy(() => LessonUncheckedUpdateManyWithoutInstructorNestedInputSchema).optional(),
@@ -2062,12 +2144,13 @@ export const UserUncheckedUpdateWithoutAvailabilitiesInputSchema: z.ZodType<Pris
 
 export const UserCreateWithoutLessonsAsInstructorInputSchema: z.ZodType<Prisma.UserCreateWithoutLessonsAsInstructorInput> = z.strictObject({
   id: z.uuid().optional(),
-  phoneNumber: z.string(),
+  phoneNumber: z.string().optional().nullable(),
   passwordHash: z.string().optional().nullable(),
   firstName: z.string(),
   lastName: z.string(),
   role: z.lazy(() => RoleSchema).optional(),
   createdAt: z.coerce.date().optional(),
+  deletedAt: z.coerce.date().optional().nullable(),
   instructor: z.lazy(() => UserCreateNestedOneWithoutStudentsInputSchema).optional(),
   students: z.lazy(() => UserCreateNestedManyWithoutInstructorInputSchema).optional(),
   lessonsAsStudent: z.lazy(() => LessonCreateNestedManyWithoutStudentInputSchema).optional(),
@@ -2077,12 +2160,13 @@ export const UserCreateWithoutLessonsAsInstructorInputSchema: z.ZodType<Prisma.U
 
 export const UserUncheckedCreateWithoutLessonsAsInstructorInputSchema: z.ZodType<Prisma.UserUncheckedCreateWithoutLessonsAsInstructorInput> = z.strictObject({
   id: z.uuid().optional(),
-  phoneNumber: z.string(),
+  phoneNumber: z.string().optional().nullable(),
   passwordHash: z.string().optional().nullable(),
   firstName: z.string(),
   lastName: z.string(),
   role: z.lazy(() => RoleSchema).optional(),
   createdAt: z.coerce.date().optional(),
+  deletedAt: z.coerce.date().optional().nullable(),
   instructorId: z.string().optional().nullable(),
   students: z.lazy(() => UserUncheckedCreateNestedManyWithoutInstructorInputSchema).optional(),
   lessonsAsStudent: z.lazy(() => LessonUncheckedCreateNestedManyWithoutStudentInputSchema).optional(),
@@ -2097,12 +2181,13 @@ export const UserCreateOrConnectWithoutLessonsAsInstructorInputSchema: z.ZodType
 
 export const UserCreateWithoutLessonsAsStudentInputSchema: z.ZodType<Prisma.UserCreateWithoutLessonsAsStudentInput> = z.strictObject({
   id: z.uuid().optional(),
-  phoneNumber: z.string(),
+  phoneNumber: z.string().optional().nullable(),
   passwordHash: z.string().optional().nullable(),
   firstName: z.string(),
   lastName: z.string(),
   role: z.lazy(() => RoleSchema).optional(),
   createdAt: z.coerce.date().optional(),
+  deletedAt: z.coerce.date().optional().nullable(),
   instructor: z.lazy(() => UserCreateNestedOneWithoutStudentsInputSchema).optional(),
   students: z.lazy(() => UserCreateNestedManyWithoutInstructorInputSchema).optional(),
   lessonsAsInstructor: z.lazy(() => LessonCreateNestedManyWithoutInstructorInputSchema).optional(),
@@ -2112,12 +2197,13 @@ export const UserCreateWithoutLessonsAsStudentInputSchema: z.ZodType<Prisma.User
 
 export const UserUncheckedCreateWithoutLessonsAsStudentInputSchema: z.ZodType<Prisma.UserUncheckedCreateWithoutLessonsAsStudentInput> = z.strictObject({
   id: z.uuid().optional(),
-  phoneNumber: z.string(),
+  phoneNumber: z.string().optional().nullable(),
   passwordHash: z.string().optional().nullable(),
   firstName: z.string(),
   lastName: z.string(),
   role: z.lazy(() => RoleSchema).optional(),
   createdAt: z.coerce.date().optional(),
+  deletedAt: z.coerce.date().optional().nullable(),
   instructorId: z.string().optional().nullable(),
   students: z.lazy(() => UserUncheckedCreateNestedManyWithoutInstructorInputSchema).optional(),
   lessonsAsInstructor: z.lazy(() => LessonUncheckedCreateNestedManyWithoutInstructorInputSchema).optional(),
@@ -2143,12 +2229,13 @@ export const UserUpdateToOneWithWhereWithoutLessonsAsInstructorInputSchema: z.Zo
 
 export const UserUpdateWithoutLessonsAsInstructorInputSchema: z.ZodType<Prisma.UserUpdateWithoutLessonsAsInstructorInput> = z.strictObject({
   id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
-  phoneNumber: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  phoneNumber: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   passwordHash: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   firstName: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   lastName: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   role: z.union([ z.lazy(() => RoleSchema), z.lazy(() => EnumRoleFieldUpdateOperationsInputSchema) ]).optional(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  deletedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   instructor: z.lazy(() => UserUpdateOneWithoutStudentsNestedInputSchema).optional(),
   students: z.lazy(() => UserUpdateManyWithoutInstructorNestedInputSchema).optional(),
   lessonsAsStudent: z.lazy(() => LessonUpdateManyWithoutStudentNestedInputSchema).optional(),
@@ -2158,12 +2245,13 @@ export const UserUpdateWithoutLessonsAsInstructorInputSchema: z.ZodType<Prisma.U
 
 export const UserUncheckedUpdateWithoutLessonsAsInstructorInputSchema: z.ZodType<Prisma.UserUncheckedUpdateWithoutLessonsAsInstructorInput> = z.strictObject({
   id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
-  phoneNumber: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  phoneNumber: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   passwordHash: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   firstName: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   lastName: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   role: z.union([ z.lazy(() => RoleSchema), z.lazy(() => EnumRoleFieldUpdateOperationsInputSchema) ]).optional(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  deletedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   instructorId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   students: z.lazy(() => UserUncheckedUpdateManyWithoutInstructorNestedInputSchema).optional(),
   lessonsAsStudent: z.lazy(() => LessonUncheckedUpdateManyWithoutStudentNestedInputSchema).optional(),
@@ -2184,12 +2272,13 @@ export const UserUpdateToOneWithWhereWithoutLessonsAsStudentInputSchema: z.ZodTy
 
 export const UserUpdateWithoutLessonsAsStudentInputSchema: z.ZodType<Prisma.UserUpdateWithoutLessonsAsStudentInput> = z.strictObject({
   id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
-  phoneNumber: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  phoneNumber: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   passwordHash: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   firstName: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   lastName: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   role: z.union([ z.lazy(() => RoleSchema), z.lazy(() => EnumRoleFieldUpdateOperationsInputSchema) ]).optional(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  deletedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   instructor: z.lazy(() => UserUpdateOneWithoutStudentsNestedInputSchema).optional(),
   students: z.lazy(() => UserUpdateManyWithoutInstructorNestedInputSchema).optional(),
   lessonsAsInstructor: z.lazy(() => LessonUpdateManyWithoutInstructorNestedInputSchema).optional(),
@@ -2199,12 +2288,13 @@ export const UserUpdateWithoutLessonsAsStudentInputSchema: z.ZodType<Prisma.User
 
 export const UserUncheckedUpdateWithoutLessonsAsStudentInputSchema: z.ZodType<Prisma.UserUncheckedUpdateWithoutLessonsAsStudentInput> = z.strictObject({
   id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
-  phoneNumber: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  phoneNumber: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   passwordHash: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   firstName: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   lastName: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   role: z.union([ z.lazy(() => RoleSchema), z.lazy(() => EnumRoleFieldUpdateOperationsInputSchema) ]).optional(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  deletedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   instructorId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   students: z.lazy(() => UserUncheckedUpdateManyWithoutInstructorNestedInputSchema).optional(),
   lessonsAsInstructor: z.lazy(() => LessonUncheckedUpdateManyWithoutInstructorNestedInputSchema).optional(),
@@ -2214,12 +2304,13 @@ export const UserUncheckedUpdateWithoutLessonsAsStudentInputSchema: z.ZodType<Pr
 
 export const UserCreateWithoutMagicTokensInputSchema: z.ZodType<Prisma.UserCreateWithoutMagicTokensInput> = z.strictObject({
   id: z.uuid().optional(),
-  phoneNumber: z.string(),
+  phoneNumber: z.string().optional().nullable(),
   passwordHash: z.string().optional().nullable(),
   firstName: z.string(),
   lastName: z.string(),
   role: z.lazy(() => RoleSchema).optional(),
   createdAt: z.coerce.date().optional(),
+  deletedAt: z.coerce.date().optional().nullable(),
   instructor: z.lazy(() => UserCreateNestedOneWithoutStudentsInputSchema).optional(),
   students: z.lazy(() => UserCreateNestedManyWithoutInstructorInputSchema).optional(),
   lessonsAsInstructor: z.lazy(() => LessonCreateNestedManyWithoutInstructorInputSchema).optional(),
@@ -2229,12 +2320,13 @@ export const UserCreateWithoutMagicTokensInputSchema: z.ZodType<Prisma.UserCreat
 
 export const UserUncheckedCreateWithoutMagicTokensInputSchema: z.ZodType<Prisma.UserUncheckedCreateWithoutMagicTokensInput> = z.strictObject({
   id: z.uuid().optional(),
-  phoneNumber: z.string(),
+  phoneNumber: z.string().optional().nullable(),
   passwordHash: z.string().optional().nullable(),
   firstName: z.string(),
   lastName: z.string(),
   role: z.lazy(() => RoleSchema).optional(),
   createdAt: z.coerce.date().optional(),
+  deletedAt: z.coerce.date().optional().nullable(),
   instructorId: z.string().optional().nullable(),
   students: z.lazy(() => UserUncheckedCreateNestedManyWithoutInstructorInputSchema).optional(),
   lessonsAsInstructor: z.lazy(() => LessonUncheckedCreateNestedManyWithoutInstructorInputSchema).optional(),
@@ -2260,12 +2352,13 @@ export const UserUpdateToOneWithWhereWithoutMagicTokensInputSchema: z.ZodType<Pr
 
 export const UserUpdateWithoutMagicTokensInputSchema: z.ZodType<Prisma.UserUpdateWithoutMagicTokensInput> = z.strictObject({
   id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
-  phoneNumber: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  phoneNumber: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   passwordHash: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   firstName: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   lastName: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   role: z.union([ z.lazy(() => RoleSchema), z.lazy(() => EnumRoleFieldUpdateOperationsInputSchema) ]).optional(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  deletedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   instructor: z.lazy(() => UserUpdateOneWithoutStudentsNestedInputSchema).optional(),
   students: z.lazy(() => UserUpdateManyWithoutInstructorNestedInputSchema).optional(),
   lessonsAsInstructor: z.lazy(() => LessonUpdateManyWithoutInstructorNestedInputSchema).optional(),
@@ -2275,12 +2368,13 @@ export const UserUpdateWithoutMagicTokensInputSchema: z.ZodType<Prisma.UserUpdat
 
 export const UserUncheckedUpdateWithoutMagicTokensInputSchema: z.ZodType<Prisma.UserUncheckedUpdateWithoutMagicTokensInput> = z.strictObject({
   id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
-  phoneNumber: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  phoneNumber: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   passwordHash: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   firstName: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   lastName: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   role: z.union([ z.lazy(() => RoleSchema), z.lazy(() => EnumRoleFieldUpdateOperationsInputSchema) ]).optional(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  deletedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   instructorId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   students: z.lazy(() => UserUncheckedUpdateManyWithoutInstructorNestedInputSchema).optional(),
   lessonsAsInstructor: z.lazy(() => LessonUncheckedUpdateManyWithoutInstructorNestedInputSchema).optional(),
@@ -2290,12 +2384,13 @@ export const UserUncheckedUpdateWithoutMagicTokensInputSchema: z.ZodType<Prisma.
 
 export const UserCreateManyInstructorInputSchema: z.ZodType<Prisma.UserCreateManyInstructorInput> = z.strictObject({
   id: z.uuid().optional(),
-  phoneNumber: z.string(),
+  phoneNumber: z.string().optional().nullable(),
   passwordHash: z.string().optional().nullable(),
   firstName: z.string(),
   lastName: z.string(),
   role: z.lazy(() => RoleSchema).optional(),
   createdAt: z.coerce.date().optional(),
+  deletedAt: z.coerce.date().optional().nullable(),
 });
 
 export const LessonCreateManyInstructorInputSchema: z.ZodType<Prisma.LessonCreateManyInstructorInput> = z.strictObject({
@@ -2331,12 +2426,13 @@ export const MagicTokenCreateManyUserInputSchema: z.ZodType<Prisma.MagicTokenCre
 
 export const UserUpdateWithoutInstructorInputSchema: z.ZodType<Prisma.UserUpdateWithoutInstructorInput> = z.strictObject({
   id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
-  phoneNumber: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  phoneNumber: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   passwordHash: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   firstName: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   lastName: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   role: z.union([ z.lazy(() => RoleSchema), z.lazy(() => EnumRoleFieldUpdateOperationsInputSchema) ]).optional(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  deletedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   students: z.lazy(() => UserUpdateManyWithoutInstructorNestedInputSchema).optional(),
   lessonsAsInstructor: z.lazy(() => LessonUpdateManyWithoutInstructorNestedInputSchema).optional(),
   lessonsAsStudent: z.lazy(() => LessonUpdateManyWithoutStudentNestedInputSchema).optional(),
@@ -2346,12 +2442,13 @@ export const UserUpdateWithoutInstructorInputSchema: z.ZodType<Prisma.UserUpdate
 
 export const UserUncheckedUpdateWithoutInstructorInputSchema: z.ZodType<Prisma.UserUncheckedUpdateWithoutInstructorInput> = z.strictObject({
   id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
-  phoneNumber: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  phoneNumber: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   passwordHash: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   firstName: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   lastName: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   role: z.union([ z.lazy(() => RoleSchema), z.lazy(() => EnumRoleFieldUpdateOperationsInputSchema) ]).optional(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  deletedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   students: z.lazy(() => UserUncheckedUpdateManyWithoutInstructorNestedInputSchema).optional(),
   lessonsAsInstructor: z.lazy(() => LessonUncheckedUpdateManyWithoutInstructorNestedInputSchema).optional(),
   lessonsAsStudent: z.lazy(() => LessonUncheckedUpdateManyWithoutStudentNestedInputSchema).optional(),
@@ -2361,12 +2458,13 @@ export const UserUncheckedUpdateWithoutInstructorInputSchema: z.ZodType<Prisma.U
 
 export const UserUncheckedUpdateManyWithoutInstructorInputSchema: z.ZodType<Prisma.UserUncheckedUpdateManyWithoutInstructorInput> = z.strictObject({
   id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
-  phoneNumber: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  phoneNumber: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   passwordHash: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   firstName: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   lastName: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   role: z.union([ z.lazy(() => RoleSchema), z.lazy(() => EnumRoleFieldUpdateOperationsInputSchema) ]).optional(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  deletedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
 });
 
 export const LessonUpdateWithoutInstructorInputSchema: z.ZodType<Prisma.LessonUpdateWithoutInstructorInput> = z.strictObject({

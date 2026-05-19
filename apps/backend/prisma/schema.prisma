@@ -23,29 +23,29 @@ enum LessonStatus {
 }
 
 model User {
-  id           String   @id @default(uuid())
-  phoneNumber  String   @unique // Главный идентификатор в Израиле (+972...)
+  id           String    @id @default(uuid())
+  phoneNumber  String?   @unique
   passwordHash String?
   firstName    String
   lastName     String
-  role         Role     @default(STUDENT)
-  createdAt    DateTime @default(now())
+  role         Role      @default(STUDENT)
+  createdAt    DateTime  @default(now())
+  deletedAt    DateTime?
 
   // Связь "Учитель -> Ученики" (Self-relation)
-  // Ученик привязан к одному учителю. У учителя много учеников.
   instructorId String?
-  instructor   User?    @relation("InstructorStudents", fields: [instructorId], references: [id])
-  students     User[]   @relation("InstructorStudents")
+  instructor   User?     @relation("InstructorStudents", fields: [instructorId], references: [id])
+  students     User[]    @relation("InstructorStudents")
 
   // Связи с уроками
   lessonsAsInstructor Lesson[] @relation("InstructorLessons")
   lessonsAsStudent    Lesson[] @relation("StudentLessons")
 
   // Настройки рабочего времени (только для роли INSTRUCTOR)
-  availabilities      InstructorAvailability[]
+  availabilities       InstructorAvailability[]
 
   // Токены для беспарольного входа (Magic Links) через SMS/WhatsApp
-  magicTokens         MagicToken[]
+  magicTokens          MagicToken[]
 }
 
 model InstructorAvailability {

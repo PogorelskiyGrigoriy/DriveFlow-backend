@@ -73,23 +73,24 @@ export class AvailabilityServiceImpl implements IAvailabilityService {
   }
 
   /**
-   * Broadcasts availability update: finds students, generates tokens, and logs notifications.
+   * Broadcasts availability update: finds active students, generates tokens, and logs notifications.
    */
   async publishAvailability(instructorId: string): Promise<{ notifiedStudentsCount: number }> {
     const students = await prisma.user.findMany({
       where: {
         instructorId,
         role: Role.STUDENT,
+        deletedAt: null,
       },
     });
 
     if (students.length === 0) {
-      logger.info({ instructorId }, 'Publish availability triggered, but no students found.');
+      logger.info({ instructorId }, 'Publish availability triggered, but no active students found.');
       return { notifiedStudentsCount: 0 };
     }
 
     let notifiedCount = 0;
-    const expiresAt = new Date(Date.now() + 6 * 24 * 60 * 60 * 1000); // 6 * 24h expiration
+    const expiresAt = new Date(Date.now() + 6 * 24 * 60 * 60 * 1000);
 
     logger.info({ instructorId, studentCount: students.length }, 'Starting availability broadcast to students');
 
@@ -105,7 +106,7 @@ export class AvailabilityServiceImpl implements IAvailabilityService {
       logger.info(
         {
           studentId: student.id,
-          phoneNumber: student.phoneNumber,
+          phoneNumber: student.phoneNumber ?? 'NO_PHONE', 
           magicLink: `http://localhost:5173/verify?token=${magicToken.token}`,
         },
         `SMS/WhatsApp sent to ${student.firstName} ${student.lastName}`
