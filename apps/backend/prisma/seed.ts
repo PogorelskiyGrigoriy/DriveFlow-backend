@@ -22,10 +22,11 @@ async function main() {
   console.log('👤 Creating main instructor for demo...');
   const mainInstructor = await prisma.user.create({
     data: {
-      phoneNumber: '+972501112233', // Статичный номер для тестов входа
+      phoneNumber: '+972501112233',
       firstName: 'Eli',
       lastName: 'Cohen',
       role: Role.INSTRUCTOR,
+      passwordHash: demoPasswordHash,
     },
   });
   console.log(`Main instructor created: ${mainInstructor.firstName} ${mainInstructor.lastName}`);
