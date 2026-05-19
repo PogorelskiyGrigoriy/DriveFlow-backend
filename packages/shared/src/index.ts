@@ -13,3 +13,6 @@ export * from './modules/lessons/index.js';
 
 // Export availability management contracts
 export * from './modules/availability/index.js';
+
+// Export students management contracts
+export * from './modules/students/index.js';
