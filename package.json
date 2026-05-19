@@ -13,6 +13,6 @@
     "db:generate": "npm run db:generate -w @driveflow/backend",
     "db:migrate": "npm run db:migrate -w @driveflow/backend",
     "db:reset": "npm run db:reset -w @driveflow/backend",
-    "db:seed": "npm run db:seed -w @driveflow/backend"
+    "db:seed": "tsx --env-file=.env ./apps/backend/prisma/seed.ts"
   }
 }

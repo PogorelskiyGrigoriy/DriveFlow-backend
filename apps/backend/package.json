@@ -45,6 +45,6 @@
     "zod-prisma-types": "^3.3.11"
   },
   "prisma": {
-    "seed": "tsx prisma/seed.ts"
+    "seed": "tsx ./prisma/seed.ts"
   }
 }

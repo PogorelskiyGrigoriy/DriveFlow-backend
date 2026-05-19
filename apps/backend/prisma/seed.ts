@@ -1,6 +1,7 @@
 import { Role, LessonStatus } from '@prisma/client';
 import { faker } from '@faker-js/faker';
 import { createPrismaClient } from '../src/infrastructure/db.js';
+import { hash } from 'bcrypt-ts';
 
 // Используем паттерн фабрики с приоритетом DIRECT_URL для сида
 const { prisma, pool } = createPrismaClient(process.env.DIRECT_URL || process.env.DATABASE_URL);
@@ -14,6 +15,8 @@ async function main() {
   await prisma.lesson.deleteMany();
   await prisma.instructorAvailability.deleteMany();
   await prisma.user.deleteMany();
+
+  const demoPasswordHash = await hash('password123', 10);
 
   // 2. Создаем главного Инструктора для демонстрации
   console.log('👤 Creating main instructor for demo...');
