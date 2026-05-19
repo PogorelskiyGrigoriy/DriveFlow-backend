@@ -14,4 +14,11 @@ const controller = new LessonController(lessonService);
  */
 router.post('/', authenticateJwt, controller.createLesson);
 
+/**
+ * Route for updating a lesson's operational status (Cancel / Complete)
+ * PATCH /api/lessons/:id/status
+ * Secured by global JWT Authentication Guard
+ */
+router.patch('/:id/status', authenticateJwt, controller.updateLessonStatus);
+
 export default router;

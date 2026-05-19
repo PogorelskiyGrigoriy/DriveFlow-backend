@@ -1,0 +1,1 @@
+проверить полезность "scripts":     "build": "tsc", в packages\shared\package.json

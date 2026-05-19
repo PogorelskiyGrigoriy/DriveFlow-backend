@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { ILessonService } from './lesson.service.js';
-import { createLessonSchema } from '@driveflow/shared';
+import { createLessonSchema, updateLessonStatusSchema } from '@driveflow/shared';
 
 export class LessonController {
   constructor(private lessonService: ILessonService) {}
@@ -18,5 +18,35 @@ export class LessonController {
 
     // 3. Respond with 201 Created and the unified DTO payload
     res.status(201).json(result);
+  };
+
+  /**
+   * HTTP Handler to update the status of an existing lesson.
+   * Expected route: PATCH /api/lessons/:id/status
+   */
+  updateLessonStatus = async (req: Request, res: Response): Promise<void> => {
+    // 1. Extract target lesson ID from the URL parameter
+    const lessonId = req.params.id as string;
+
+    // 2. Validate the incoming body (strictly checking for valid LessonStatus enum)
+    const validatedInput = updateLessonStatusSchema.parse(req.body);
+
+    // 3. Extract user security context injected by the authenticateJwt middleware.
+    // We cast to 'any' here locally to bypass Express's default Request types, 
+    // assuming your auth middleware attaches { id, role } to req.user.
+    const user = (req as any).user;
+    const userId = user.id;
+    const userRole = user.role;
+
+    // 4. Delegate to the business logic layer where all rules are enforced
+    const result = await this.lessonService.updateLessonStatus(
+      lessonId,
+      validatedInput,
+      userId,
+      userRole
+    );
+
+    // 5. Respond with 200 OK and the updated lesson DTO
+    res.status(200).json(result);
   };
 }
