@@ -53,10 +53,11 @@ model InstructorAvailability {
   instructorId String
   instructor   User   @relation(fields: [instructorId], references: [id], onDelete: Cascade)
 
-  // 0 = Воскресенье (Йом Ришон — начало недели в Израиле), 1 = Понедельник ... 6 = Суббота
+  // 0 = Воскресенье (начало недели в Израиле), 1 = Понедельник ... 5 = Пятница
   dayOfWeek    Int    
-  startHour    Int    // Час начала работы (например, 8 означает 08:00)
-  endHour      Int    // Час окончания работы (например, 17 означает 17:00)
+  
+  // Массив рабочих часов. Например: [8, 9, 10, 11, 13, 14, 15, 16] (12 пропущено — обед)
+  hours        Int[]
 
   @@unique([instructorId, dayOfWeek]) // Один график на один день недели для конкретного учителя
 }

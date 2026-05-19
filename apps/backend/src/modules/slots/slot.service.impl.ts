@@ -55,10 +55,8 @@ export class SlotServiceImpl implements ISlotService {
     // Extract already booked starting hours
     const bookedHours = bookedLessons.map((lesson) => lesson.startTime.getUTCHours());
 
-    // 5. Generate full working hours grid and filter out booked/past slots
+    // 5. Generate free slots directly from the hours array stored in the database
     const availableSlots: string[] = [];
-    const startHour = availability.startHour; 
-    const endHour = availability.endHour;     
 
     // Setup logic to prevent booking in the past for TODAY
     const now = new Date();
@@ -69,7 +67,7 @@ export class SlotServiceImpl implements ISlotService {
       
     const currentUTCHour = now.getUTCHours();
 
-    for (let hour = startHour; hour < endHour; hour++) {
+    for (const hour of availability.hours) {
       // Rule A: Skip if another student already booked this exact hour
       if (bookedHours.includes(hour)) continue;
 

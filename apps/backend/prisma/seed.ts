@@ -28,14 +28,14 @@ async function main() {
   console.log(`Main instructor created: ${mainInstructor.firstName} ${mainInstructor.lastName}`);
 
   // 3. Задаем рабочие часы (Воскресенье - Четверг, с 08:00 до 17:00)
+  // Массив включает часы начала уроков: 8, 9, 10, 11, 12, 13, 14, 15, 16. (17:00 - это конец смены)
   console.log('📅 Setting up availability (Sun-Thu, 08:00-17:00)...');
   for (let day = 0; day <= 4; day++) {
     await prisma.instructorAvailability.create({
       data: {
         instructorId: mainInstructor.id,
         dayOfWeek: day,
-        startHour: 8,
-        endHour: 17,
+        hours: [8, 9, 10, 11, 12, 13, 14, 15, 16], 
       },
     });
   }
@@ -53,9 +53,13 @@ async function main() {
     });
     secondaryInstructors.push(teacher);
     
-    // Минимальный график для них
+    // Минимальный график для них (с 09:00 до 16:00)
     await prisma.instructorAvailability.create({
-      data: { instructorId: teacher.id, dayOfWeek: 0, startHour: 9, endHour: 16 }
+      data: { 
+        instructorId: teacher.id, 
+        dayOfWeek: 0, 
+        hours: [9, 10, 11, 12, 13, 14, 15] 
+      }
     });
   }
 

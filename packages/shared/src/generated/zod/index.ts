@@ -14,7 +14,7 @@ export const TransactionIsolationLevelSchema = z.enum(['ReadUncommitted','ReadCo
 
 export const UserScalarFieldEnumSchema = z.enum(['id','phoneNumber','passwordHash','firstName','lastName','role','createdAt','instructorId']);
 
-export const InstructorAvailabilityScalarFieldEnumSchema = z.enum(['id','instructorId','dayOfWeek','startHour','endHour']);
+export const InstructorAvailabilityScalarFieldEnumSchema = z.enum(['id','instructorId','dayOfWeek','hours']);
 
 export const LessonScalarFieldEnumSchema = z.enum(['id','instructorId','studentId','startTime','durationMin','status','createdAt']);
 
@@ -63,8 +63,7 @@ export const InstructorAvailabilitySchema = z.object({
   id: z.uuid(),
   instructorId: z.string(),
   dayOfWeek: z.number().int(),
-  startHour: z.number().int(),
-  endHour: z.number().int(),
+  hours: z.number().int().array(),
 })
 
 export type InstructorAvailability = z.infer<typeof InstructorAvailabilitySchema>
@@ -167,8 +166,7 @@ export const InstructorAvailabilitySelectSchema: z.ZodType<Prisma.InstructorAvai
   id: z.boolean().optional(),
   instructorId: z.boolean().optional(),
   dayOfWeek: z.boolean().optional(),
-  startHour: z.boolean().optional(),
-  endHour: z.boolean().optional(),
+  hours: z.boolean().optional(),
   instructor: z.union([z.boolean(),z.lazy(() => UserArgsSchema)]).optional(),
 }).strict()
 
@@ -327,8 +325,7 @@ export const InstructorAvailabilityWhereInputSchema: z.ZodType<Prisma.Instructor
   id: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
   instructorId: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
   dayOfWeek: z.union([ z.lazy(() => IntFilterSchema), z.number() ]).optional(),
-  startHour: z.union([ z.lazy(() => IntFilterSchema), z.number() ]).optional(),
-  endHour: z.union([ z.lazy(() => IntFilterSchema), z.number() ]).optional(),
+  hours: z.lazy(() => IntNullableListFilterSchema).optional(),
   instructor: z.union([ z.lazy(() => UserScalarRelationFilterSchema), z.lazy(() => UserWhereInputSchema) ]).optional(),
 });
 
@@ -336,8 +333,7 @@ export const InstructorAvailabilityOrderByWithRelationInputSchema: z.ZodType<Pri
   id: z.lazy(() => SortOrderSchema).optional(),
   instructorId: z.lazy(() => SortOrderSchema).optional(),
   dayOfWeek: z.lazy(() => SortOrderSchema).optional(),
-  startHour: z.lazy(() => SortOrderSchema).optional(),
-  endHour: z.lazy(() => SortOrderSchema).optional(),
+  hours: z.lazy(() => SortOrderSchema).optional(),
   instructor: z.lazy(() => UserOrderByWithRelationInputSchema).optional(),
 });
 
@@ -361,8 +357,7 @@ export const InstructorAvailabilityWhereUniqueInputSchema: z.ZodType<Prisma.Inst
   NOT: z.union([ z.lazy(() => InstructorAvailabilityWhereInputSchema), z.lazy(() => InstructorAvailabilityWhereInputSchema).array() ]).optional(),
   instructorId: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
   dayOfWeek: z.union([ z.lazy(() => IntFilterSchema), z.number().int() ]).optional(),
-  startHour: z.union([ z.lazy(() => IntFilterSchema), z.number().int() ]).optional(),
-  endHour: z.union([ z.lazy(() => IntFilterSchema), z.number().int() ]).optional(),
+  hours: z.lazy(() => IntNullableListFilterSchema).optional(),
   instructor: z.union([ z.lazy(() => UserScalarRelationFilterSchema), z.lazy(() => UserWhereInputSchema) ]).optional(),
 }));
 
@@ -370,8 +365,7 @@ export const InstructorAvailabilityOrderByWithAggregationInputSchema: z.ZodType<
   id: z.lazy(() => SortOrderSchema).optional(),
   instructorId: z.lazy(() => SortOrderSchema).optional(),
   dayOfWeek: z.lazy(() => SortOrderSchema).optional(),
-  startHour: z.lazy(() => SortOrderSchema).optional(),
-  endHour: z.lazy(() => SortOrderSchema).optional(),
+  hours: z.lazy(() => SortOrderSchema).optional(),
   _count: z.lazy(() => InstructorAvailabilityCountOrderByAggregateInputSchema).optional(),
   _avg: z.lazy(() => InstructorAvailabilityAvgOrderByAggregateInputSchema).optional(),
   _max: z.lazy(() => InstructorAvailabilityMaxOrderByAggregateInputSchema).optional(),
@@ -386,8 +380,7 @@ export const InstructorAvailabilityScalarWhereWithAggregatesInputSchema: z.ZodTy
   id: z.union([ z.lazy(() => StringWithAggregatesFilterSchema), z.string() ]).optional(),
   instructorId: z.union([ z.lazy(() => StringWithAggregatesFilterSchema), z.string() ]).optional(),
   dayOfWeek: z.union([ z.lazy(() => IntWithAggregatesFilterSchema), z.number() ]).optional(),
-  startHour: z.union([ z.lazy(() => IntWithAggregatesFilterSchema), z.number() ]).optional(),
-  endHour: z.union([ z.lazy(() => IntWithAggregatesFilterSchema), z.number() ]).optional(),
+  hours: z.lazy(() => IntNullableListFilterSchema).optional(),
 });
 
 export const LessonWhereInputSchema: z.ZodType<Prisma.LessonWhereInput> = z.strictObject({
@@ -639,8 +632,7 @@ export const UserUncheckedUpdateManyInputSchema: z.ZodType<Prisma.UserUncheckedU
 export const InstructorAvailabilityCreateInputSchema: z.ZodType<Prisma.InstructorAvailabilityCreateInput> = z.strictObject({
   id: z.uuid().optional(),
   dayOfWeek: z.number().int(),
-  startHour: z.number().int(),
-  endHour: z.number().int(),
+  hours: z.union([ z.lazy(() => InstructorAvailabilityCreatehoursInputSchema), z.number().int().array() ]).optional(),
   instructor: z.lazy(() => UserCreateNestedOneWithoutAvailabilitiesInputSchema),
 });
 
@@ -648,15 +640,13 @@ export const InstructorAvailabilityUncheckedCreateInputSchema: z.ZodType<Prisma.
   id: z.uuid().optional(),
   instructorId: z.string(),
   dayOfWeek: z.number().int(),
-  startHour: z.number().int(),
-  endHour: z.number().int(),
+  hours: z.union([ z.lazy(() => InstructorAvailabilityCreatehoursInputSchema), z.number().int().array() ]).optional(),
 });
 
 export const InstructorAvailabilityUpdateInputSchema: z.ZodType<Prisma.InstructorAvailabilityUpdateInput> = z.strictObject({
   id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   dayOfWeek: z.union([ z.number().int(),z.lazy(() => IntFieldUpdateOperationsInputSchema) ]).optional(),
-  startHour: z.union([ z.number().int(),z.lazy(() => IntFieldUpdateOperationsInputSchema) ]).optional(),
-  endHour: z.union([ z.number().int(),z.lazy(() => IntFieldUpdateOperationsInputSchema) ]).optional(),
+  hours: z.union([ z.lazy(() => InstructorAvailabilityUpdatehoursInputSchema), z.number().int().array() ]).optional(),
   instructor: z.lazy(() => UserUpdateOneRequiredWithoutAvailabilitiesNestedInputSchema).optional(),
 });
 
@@ -664,31 +654,27 @@ export const InstructorAvailabilityUncheckedUpdateInputSchema: z.ZodType<Prisma.
   id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   instructorId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   dayOfWeek: z.union([ z.number().int(),z.lazy(() => IntFieldUpdateOperationsInputSchema) ]).optional(),
-  startHour: z.union([ z.number().int(),z.lazy(() => IntFieldUpdateOperationsInputSchema) ]).optional(),
-  endHour: z.union([ z.number().int(),z.lazy(() => IntFieldUpdateOperationsInputSchema) ]).optional(),
+  hours: z.union([ z.lazy(() => InstructorAvailabilityUpdatehoursInputSchema), z.number().int().array() ]).optional(),
 });
 
 export const InstructorAvailabilityCreateManyInputSchema: z.ZodType<Prisma.InstructorAvailabilityCreateManyInput> = z.strictObject({
   id: z.uuid().optional(),
   instructorId: z.string(),
   dayOfWeek: z.number().int(),
-  startHour: z.number().int(),
-  endHour: z.number().int(),
+  hours: z.union([ z.lazy(() => InstructorAvailabilityCreatehoursInputSchema), z.number().int().array() ]).optional(),
 });
 
 export const InstructorAvailabilityUpdateManyMutationInputSchema: z.ZodType<Prisma.InstructorAvailabilityUpdateManyMutationInput> = z.strictObject({
   id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   dayOfWeek: z.union([ z.number().int(),z.lazy(() => IntFieldUpdateOperationsInputSchema) ]).optional(),
-  startHour: z.union([ z.number().int(),z.lazy(() => IntFieldUpdateOperationsInputSchema) ]).optional(),
-  endHour: z.union([ z.number().int(),z.lazy(() => IntFieldUpdateOperationsInputSchema) ]).optional(),
+  hours: z.union([ z.lazy(() => InstructorAvailabilityUpdatehoursInputSchema), z.number().int().array() ]).optional(),
 });
 
 export const InstructorAvailabilityUncheckedUpdateManyInputSchema: z.ZodType<Prisma.InstructorAvailabilityUncheckedUpdateManyInput> = z.strictObject({
   id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   instructorId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   dayOfWeek: z.union([ z.number().int(),z.lazy(() => IntFieldUpdateOperationsInputSchema) ]).optional(),
-  startHour: z.union([ z.number().int(),z.lazy(() => IntFieldUpdateOperationsInputSchema) ]).optional(),
-  endHour: z.union([ z.number().int(),z.lazy(() => IntFieldUpdateOperationsInputSchema) ]).optional(),
+  hours: z.union([ z.lazy(() => InstructorAvailabilityUpdatehoursInputSchema), z.number().int().array() ]).optional(),
 });
 
 export const LessonCreateInputSchema: z.ZodType<Prisma.LessonCreateInput> = z.strictObject({
@@ -1016,6 +1002,14 @@ export const IntFilterSchema: z.ZodType<Prisma.IntFilter> = z.strictObject({
   not: z.union([ z.number(),z.lazy(() => NestedIntFilterSchema) ]).optional(),
 });
 
+export const IntNullableListFilterSchema: z.ZodType<Prisma.IntNullableListFilter> = z.strictObject({
+  equals: z.number().array().optional().nullable(),
+  has: z.number().optional().nullable(),
+  hasEvery: z.number().array().optional(),
+  hasSome: z.number().array().optional(),
+  isEmpty: z.boolean().optional(),
+});
+
 export const UserScalarRelationFilterSchema: z.ZodType<Prisma.UserScalarRelationFilter> = z.strictObject({
   is: z.lazy(() => UserWhereInputSchema).optional(),
   isNot: z.lazy(() => UserWhereInputSchema).optional(),
@@ -1030,36 +1024,29 @@ export const InstructorAvailabilityCountOrderByAggregateInputSchema: z.ZodType<P
   id: z.lazy(() => SortOrderSchema).optional(),
   instructorId: z.lazy(() => SortOrderSchema).optional(),
   dayOfWeek: z.lazy(() => SortOrderSchema).optional(),
-  startHour: z.lazy(() => SortOrderSchema).optional(),
-  endHour: z.lazy(() => SortOrderSchema).optional(),
+  hours: z.lazy(() => SortOrderSchema).optional(),
 });
 
 export const InstructorAvailabilityAvgOrderByAggregateInputSchema: z.ZodType<Prisma.InstructorAvailabilityAvgOrderByAggregateInput> = z.strictObject({
   dayOfWeek: z.lazy(() => SortOrderSchema).optional(),
-  startHour: z.lazy(() => SortOrderSchema).optional(),
-  endHour: z.lazy(() => SortOrderSchema).optional(),
+  hours: z.lazy(() => SortOrderSchema).optional(),
 });
 
 export const InstructorAvailabilityMaxOrderByAggregateInputSchema: z.ZodType<Prisma.InstructorAvailabilityMaxOrderByAggregateInput> = z.strictObject({
   id: z.lazy(() => SortOrderSchema).optional(),
   instructorId: z.lazy(() => SortOrderSchema).optional(),
   dayOfWeek: z.lazy(() => SortOrderSchema).optional(),
-  startHour: z.lazy(() => SortOrderSchema).optional(),
-  endHour: z.lazy(() => SortOrderSchema).optional(),
 });
 
 export const InstructorAvailabilityMinOrderByAggregateInputSchema: z.ZodType<Prisma.InstructorAvailabilityMinOrderByAggregateInput> = z.strictObject({
   id: z.lazy(() => SortOrderSchema).optional(),
   instructorId: z.lazy(() => SortOrderSchema).optional(),
   dayOfWeek: z.lazy(() => SortOrderSchema).optional(),
-  startHour: z.lazy(() => SortOrderSchema).optional(),
-  endHour: z.lazy(() => SortOrderSchema).optional(),
 });
 
 export const InstructorAvailabilitySumOrderByAggregateInputSchema: z.ZodType<Prisma.InstructorAvailabilitySumOrderByAggregateInput> = z.strictObject({
   dayOfWeek: z.lazy(() => SortOrderSchema).optional(),
-  startHour: z.lazy(() => SortOrderSchema).optional(),
-  endHour: z.lazy(() => SortOrderSchema).optional(),
+  hours: z.lazy(() => SortOrderSchema).optional(),
 });
 
 export const IntWithAggregatesFilterSchema: z.ZodType<Prisma.IntWithAggregatesFilter> = z.strictObject({
@@ -1404,6 +1391,10 @@ export const MagicTokenUncheckedUpdateManyWithoutUserNestedInputSchema: z.ZodTyp
   deleteMany: z.union([ z.lazy(() => MagicTokenScalarWhereInputSchema), z.lazy(() => MagicTokenScalarWhereInputSchema).array() ]).optional(),
 });
 
+export const InstructorAvailabilityCreatehoursInputSchema: z.ZodType<Prisma.InstructorAvailabilityCreatehoursInput> = z.strictObject({
+  set: z.number().array(),
+});
+
 export const UserCreateNestedOneWithoutAvailabilitiesInputSchema: z.ZodType<Prisma.UserCreateNestedOneWithoutAvailabilitiesInput> = z.strictObject({
   create: z.union([ z.lazy(() => UserCreateWithoutAvailabilitiesInputSchema), z.lazy(() => UserUncheckedCreateWithoutAvailabilitiesInputSchema) ]).optional(),
   connectOrCreate: z.lazy(() => UserCreateOrConnectWithoutAvailabilitiesInputSchema).optional(),
@@ -1416,6 +1407,11 @@ export const IntFieldUpdateOperationsInputSchema: z.ZodType<Prisma.IntFieldUpdat
   decrement: z.number().optional(),
   multiply: z.number().optional(),
   divide: z.number().optional(),
+});
+
+export const InstructorAvailabilityUpdatehoursInputSchema: z.ZodType<Prisma.InstructorAvailabilityUpdatehoursInput> = z.strictObject({
+  set: z.number().array().optional(),
+  push: z.union([ z.number(),z.number().array() ]).optional(),
 });
 
 export const UserUpdateOneRequiredWithoutAvailabilitiesNestedInputSchema: z.ZodType<Prisma.UserUpdateOneRequiredWithoutAvailabilitiesNestedInput> = z.strictObject({
@@ -1776,15 +1772,13 @@ export const LessonCreateManyStudentInputEnvelopeSchema: z.ZodType<Prisma.Lesson
 export const InstructorAvailabilityCreateWithoutInstructorInputSchema: z.ZodType<Prisma.InstructorAvailabilityCreateWithoutInstructorInput> = z.strictObject({
   id: z.uuid().optional(),
   dayOfWeek: z.number().int(),
-  startHour: z.number().int(),
-  endHour: z.number().int(),
+  hours: z.union([ z.lazy(() => InstructorAvailabilityCreatehoursInputSchema), z.number().int().array() ]).optional(),
 });
 
 export const InstructorAvailabilityUncheckedCreateWithoutInstructorInputSchema: z.ZodType<Prisma.InstructorAvailabilityUncheckedCreateWithoutInstructorInput> = z.strictObject({
   id: z.uuid().optional(),
   dayOfWeek: z.number().int(),
-  startHour: z.number().int(),
-  endHour: z.number().int(),
+  hours: z.union([ z.lazy(() => InstructorAvailabilityCreatehoursInputSchema), z.number().int().array() ]).optional(),
 });
 
 export const InstructorAvailabilityCreateOrConnectWithoutInstructorInputSchema: z.ZodType<Prisma.InstructorAvailabilityCreateOrConnectWithoutInstructorInput> = z.strictObject({
@@ -1960,8 +1954,7 @@ export const InstructorAvailabilityScalarWhereInputSchema: z.ZodType<Prisma.Inst
   id: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
   instructorId: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
   dayOfWeek: z.union([ z.lazy(() => IntFilterSchema), z.number() ]).optional(),
-  startHour: z.union([ z.lazy(() => IntFilterSchema), z.number() ]).optional(),
-  endHour: z.union([ z.lazy(() => IntFilterSchema), z.number() ]).optional(),
+  hours: z.lazy(() => IntNullableListFilterSchema).optional(),
 });
 
 export const MagicTokenUpsertWithWhereUniqueWithoutUserInputSchema: z.ZodType<Prisma.MagicTokenUpsertWithWhereUniqueWithoutUserInput> = z.strictObject({
@@ -2326,8 +2319,7 @@ export const LessonCreateManyStudentInputSchema: z.ZodType<Prisma.LessonCreateMa
 export const InstructorAvailabilityCreateManyInstructorInputSchema: z.ZodType<Prisma.InstructorAvailabilityCreateManyInstructorInput> = z.strictObject({
   id: z.uuid().optional(),
   dayOfWeek: z.number().int(),
-  startHour: z.number().int(),
-  endHour: z.number().int(),
+  hours: z.union([ z.lazy(() => InstructorAvailabilityCreatehoursInputSchema), z.number().int().array() ]).optional(),
 });
 
 export const MagicTokenCreateManyUserInputSchema: z.ZodType<Prisma.MagicTokenCreateManyUserInput> = z.strictObject({
@@ -2434,22 +2426,19 @@ export const LessonUncheckedUpdateManyWithoutStudentInputSchema: z.ZodType<Prism
 export const InstructorAvailabilityUpdateWithoutInstructorInputSchema: z.ZodType<Prisma.InstructorAvailabilityUpdateWithoutInstructorInput> = z.strictObject({
   id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   dayOfWeek: z.union([ z.number().int(),z.lazy(() => IntFieldUpdateOperationsInputSchema) ]).optional(),
-  startHour: z.union([ z.number().int(),z.lazy(() => IntFieldUpdateOperationsInputSchema) ]).optional(),
-  endHour: z.union([ z.number().int(),z.lazy(() => IntFieldUpdateOperationsInputSchema) ]).optional(),
+  hours: z.union([ z.lazy(() => InstructorAvailabilityUpdatehoursInputSchema), z.number().int().array() ]).optional(),
 });
 
 export const InstructorAvailabilityUncheckedUpdateWithoutInstructorInputSchema: z.ZodType<Prisma.InstructorAvailabilityUncheckedUpdateWithoutInstructorInput> = z.strictObject({
   id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   dayOfWeek: z.union([ z.number().int(),z.lazy(() => IntFieldUpdateOperationsInputSchema) ]).optional(),
-  startHour: z.union([ z.number().int(),z.lazy(() => IntFieldUpdateOperationsInputSchema) ]).optional(),
-  endHour: z.union([ z.number().int(),z.lazy(() => IntFieldUpdateOperationsInputSchema) ]).optional(),
+  hours: z.union([ z.lazy(() => InstructorAvailabilityUpdatehoursInputSchema), z.number().int().array() ]).optional(),
 });
 
 export const InstructorAvailabilityUncheckedUpdateManyWithoutInstructorInputSchema: z.ZodType<Prisma.InstructorAvailabilityUncheckedUpdateManyWithoutInstructorInput> = z.strictObject({
   id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   dayOfWeek: z.union([ z.number().int(),z.lazy(() => IntFieldUpdateOperationsInputSchema) ]).optional(),
-  startHour: z.union([ z.number().int(),z.lazy(() => IntFieldUpdateOperationsInputSchema) ]).optional(),
-  endHour: z.union([ z.number().int(),z.lazy(() => IntFieldUpdateOperationsInputSchema) ]).optional(),
+  hours: z.union([ z.lazy(() => InstructorAvailabilityUpdatehoursInputSchema), z.number().int().array() ]).optional(),
 });
 
 export const MagicTokenUpdateWithoutUserInputSchema: z.ZodType<Prisma.MagicTokenUpdateWithoutUserInput> = z.strictObject({
