@@ -1,23 +1,26 @@
 import { ISlotService } from './slot.service.js';
 import { prisma } from '../../infrastructure/db.js';
-import { AvailableSlotsResponseDTO } from '@driveflow/shared';
+import { AvailableSlotsResponseDTO, DATE_YYYY_MM_DD_REGEX } from '@driveflow/shared';
 import { LessonStatus } from '@prisma/client';
+import { ValidationError } from '../../utils/app-errors.js';
 
 export class SlotServiceImpl implements ISlotService {
   /**
    * Calculates all free 1-hour driving lesson slots for a specific instructor and date.
    */
   async getAvailableSlots(instructorId: string, date: string): Promise<AvailableSlotsResponseDTO> {
+    if (!DATE_YYYY_MM_DD_REGEX.test(date)) {
+      throw new ValidationError('Invalid date format. Expected YYYY-MM-DD.');
+    }
+
     // 1. Parse date string (YYYY-MM-DD) safely using UTC to avoid timezone shifting bugs
     const [year, month, day] = date.split('-').map(Number);
     const targetDate = new Date(Date.UTC(year, month - 1, day));
     
     // JS .getUTCDay() returns: 0 = Sunday, 1 = Monday, ..., 6 = Saturday
-    // Matches the standard Israeli working week pattern
     const dayOfWeek = targetDate.getUTCDay();
 
     // 2. Fetch the instructor's working hours configuration for this specific day of the week
-    // Fixed: Removed 'isWorkingDay' property. If record exists, it is a working day.
     const availability = await prisma.instructorAvailability.findFirst({
       where: {
         instructorId,
@@ -27,11 +30,7 @@ export class SlotServiceImpl implements ISlotService {
 
     // If the instructor does not work on this day (no record in DB), return empty slots
     if (!availability) {
-      return {
-        date,
-        instructorId,
-        slots: [],
-      };
+      return { date, instructorId, slots: [] };
     }
 
     // 3. Define the time boundaries for the query to capture all lessons on this calendar day
@@ -39,7 +38,6 @@ export class SlotServiceImpl implements ISlotService {
     const endOfDay = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999));
 
     // 4. Fetch all active scheduled lessons for this instructor on the target date
-    // Fixed: Changed field name from 'date' to 'startTime' to match schema.prisma
     const bookedLessons = await prisma.lesson.findMany({
       where: {
         instructorId,
@@ -54,21 +52,33 @@ export class SlotServiceImpl implements ISlotService {
       },
     });
 
-    // Extract already booked starting hours using the correct 'startTime' field
+    // Extract already booked starting hours
     const bookedHours = bookedLessons.map((lesson) => lesson.startTime.getUTCHours());
 
-    // 5. Generate full working hours grid and filter out booked slots
+    // 5. Generate full working hours grid and filter out booked/past slots
     const availableSlots: string[] = [];
-    const startHour = availability.startHour; // e.g., 8
-    const endHour = availability.endHour;     // e.g., 17
+    const startHour = availability.startHour; 
+    const endHour = availability.endHour;     
+
+    // Setup logic to prevent booking in the past for TODAY
+    const now = new Date();
+    const isToday = 
+      now.getUTCFullYear() === year && 
+      now.getUTCMonth() === month - 1 && 
+      now.getUTCDate() === day;
+      
+    const currentUTCHour = now.getUTCHours();
 
     for (let hour = startHour; hour < endHour; hour++) {
-      // If the hour is not in the booked array, it's open for registration
-      if (!bookedHours.includes(hour)) {
-        // Format integer hour to standard readable string "HH:00" (e.g., "09:00")
-        const formattedSlot = `${String(hour).padStart(2, '0')}:00`;
-        availableSlots.push(formattedSlot);
-      }
+      // Rule A: Skip if another student already booked this exact hour
+      if (bookedHours.includes(hour)) continue;
+
+      // Rule B: Skip if the date is today and the hour has already started or passed
+      if (isToday && hour <= currentUTCHour) continue;
+
+      // Format integer hour to standard readable string "HH:00" (e.g., "09:00")
+      const formattedSlot = `${String(hour).padStart(2, '0')}:00`;
+      availableSlots.push(formattedSlot);
     }
 
     // 6. Return unified payload following the shared DTO design contract
