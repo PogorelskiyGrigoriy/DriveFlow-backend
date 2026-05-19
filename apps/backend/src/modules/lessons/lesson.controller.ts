@@ -31,12 +31,9 @@ export class LessonController {
     // 2. Validate the incoming body (strictly checking for valid LessonStatus enum)
     const validatedInput = updateLessonStatusSchema.parse(req.body);
 
-    // 3. Extract user security context injected by the authenticateJwt middleware.
-    // We cast to 'any' here locally to bypass Express's default Request types, 
-    // assuming your auth middleware attaches { id, role } to req.user.
-    const user = (req as any).user;
-    const userId = user.id;
-    const userRole = user.role;
+    // 3. Extract user security context safely injected by the authenticateJwt middleware.
+    const userId = req.user.id;
+    const userRole = req.user.role;
 
     // 4. Delegate to the business logic layer where all rules are enforced
     const result = await this.lessonService.updateLessonStatus(
@@ -55,9 +52,9 @@ export class LessonController {
    * Expected route: GET /api/lessons/my
    */
   getUserLessons = async (req: Request, res: Response): Promise<void> => {
-    const user = (req as any).user;
+    const studentId = req.user.id;
     
-    const result = await this.lessonService.getUserLessons(user.id);
+    const result = await this.lessonService.getUserLessons(studentId);
     res.status(200).json(result);
   };
 
@@ -66,7 +63,7 @@ export class LessonController {
    * Expected route: GET /api/lessons/schedule?date=YYYY-MM-DD
    */
   getInstructorSchedule = async (req: Request, res: Response): Promise<void> => {
-    const user = (req as any).user;
+    const instructorId = req.user.id;
     const dateStr = req.query.date as string;
 
     if (!dateStr) {
@@ -75,7 +72,7 @@ export class LessonController {
     }
 
     // Pass the instructor's ID and the date string to the service
-    const result = await this.lessonService.getInstructorSchedule(user.id, dateStr);
+    const result = await this.lessonService.getInstructorSchedule(instructorId, dateStr);
     res.status(200).json(result);
   };
 }
