@@ -1,26 +1,28 @@
-import { LessonSchema } from '../../generated/zod/index.js';
-import { LessonStatus } from '@prisma/client';
 import { z } from 'zod';
+import { LessonStatus } from '@prisma/client';
 
 /**
- * Modernized validation schema for booking a new driving lesson.
- * Derived directly from Prisma Generated Zod types.
+ * Validation schema for booking a new driving lesson.
+ * Coerces the network ISO string into a native Date object for backend operations.
  */
-export const createLessonSchema = LessonSchema.pick({
-  instructorId: true,
-  studentId: true,
-  startTime: true,
+export const CreateLessonSchema = z.object({
+  instructorId: z.uuid('Invalid instructor ID format'),
+  studentId: z.uuid('Invalid student ID format'),
+  startTime: z.coerce.date({
+    message: 'Start time must be a valid date or ISO 8601 string',
+    error: 'Start time must be a valid ISO 8601 string',
+  }),
 });
 
 /**
  * Validation schema for mutating a lesson's operational state.
  * Restricts updates strictly to valid Prisma LessonStatus enums.
  */
-export const updateLessonStatusSchema = z.object({
+export const UpdateLessonStatusSchema = z.object({
   status: z.enum(LessonStatus, { 
     message: 'Invalid status. Must be SCHEDULED, COMPLETED, or CANCELLED' 
   }),
 });
 
-export type CreateLessonInput = z.infer<typeof createLessonSchema>;
-export type UpdateLessonStatusInput = z.infer<typeof updateLessonStatusSchema>;
+export type CreateLessonInput = z.infer<typeof CreateLessonSchema>;
+export type UpdateLessonStatusInput = z.infer<typeof UpdateLessonStatusSchema>;

@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { ILessonService } from './lesson.service.js';
-import { createLessonSchema, updateLessonStatusSchema } from '@driveflow/shared';
+import { CreateLessonSchema, UpdateLessonStatusSchema } from '@driveflow/shared';
 
 export class LessonController {
   constructor(private lessonService: ILessonService) {}
@@ -10,8 +10,8 @@ export class LessonController {
    * Body payload is validated against the schema derived from Prisma.
    */
   createLesson = async (req: Request, res: Response): Promise<void> => {
-    // 1. Validate and coerce incoming body (e.g., converts ISO string startTime to JS Date)
-    const validatedInput = createLessonSchema.parse(req.body);
+    // 1. Validate and coerce incoming body (converts ISO string startTime to JS Date)
+    const validatedInput = CreateLessonSchema.parse(req.body);
 
     // 2. Pass clean data to the business logic layer
     const result = await this.lessonService.createLesson(validatedInput);
@@ -29,11 +29,11 @@ export class LessonController {
     const lessonId = req.params.id as string;
 
     // 2. Validate the incoming body (strictly checking for valid LessonStatus enum)
-    const validatedInput = updateLessonStatusSchema.parse(req.body);
+    const validatedInput = UpdateLessonStatusSchema.parse(req.body);
 
     // 3. Extract user security context safely injected by the authenticateJwt middleware.
-    const userId = req.user.id;
-    const userRole = req.user.role;
+    const userId = req.user!.id;
+    const userRole = req.user!.role;
 
     // 4. Delegate to the business logic layer where all rules are enforced
     const result = await this.lessonService.updateLessonStatus(
@@ -52,7 +52,7 @@ export class LessonController {
    * Expected route: GET /api/lessons/my
    */
   getUserLessons = async (req: Request, res: Response): Promise<void> => {
-    const studentId = req.user.id;
+    const studentId = req.user!.id;
     
     const result = await this.lessonService.getUserLessons(studentId);
     res.status(200).json(result);
@@ -63,7 +63,7 @@ export class LessonController {
    * Expected route: GET /api/lessons/schedule?date=YYYY-MM-DD
    */
   getInstructorSchedule = async (req: Request, res: Response): Promise<void> => {
-    const instructorId = req.user.id;
+    const instructorId = req.user!.id;
     const dateStr = req.query.date as string;
 
     if (!dateStr) {
