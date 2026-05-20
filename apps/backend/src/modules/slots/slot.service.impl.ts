@@ -3,24 +3,27 @@ import { prisma } from '../../infrastructure/db.js';
 import { AvailableSlotsResponseDTO, DATE_YYYY_MM_DD_REGEX } from '@driveflow/shared';
 import { LessonStatus } from '@prisma/client';
 import { ValidationError } from '../../utils/app-errors.js';
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc.js';
+import timezone from 'dayjs/plugin/timezone.js';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
+const ISRAEL_TZ = 'Asia/Jerusalem';
 
 export class SlotServiceImpl implements ISlotService {
-  /**
-   * Calculates all free 1-hour driving lesson slots for a specific instructor and date.
-   */
+  
   async getAvailableSlots(instructorId: string, date: string): Promise<AvailableSlotsResponseDTO> {
     if (!DATE_YYYY_MM_DD_REGEX.test(date)) {
       throw new ValidationError('Invalid date format. Expected YYYY-MM-DD.');
     }
 
-    // 1. Parse date string (YYYY-MM-DD) safely using UTC to avoid timezone shifting bugs
-    const [year, month, day] = date.split('-').map(Number);
-    const targetDate = new Date(Date.UTC(year, month - 1, day));
-    
-    // JS .getUTCDay() returns: 0 = Sunday, 1 = Monday, ..., 6 = Saturday
-    const dayOfWeek = targetDate.getUTCDay();
+    // 1. Create a dayjs object specifically in the Israel timezone
+    const targetDate = dayjs.tz(date, ISRAEL_TZ);
+    const dayOfWeek = targetDate.day(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
 
-    // 2. Fetch the instructor's working hours configuration for this specific day of the week
+    // 2. Fetch the instructor's working hours configuration
     const availability = await prisma.instructorAvailability.findFirst({
       where: {
         instructorId,
@@ -28,16 +31,15 @@ export class SlotServiceImpl implements ISlotService {
       },
     });
 
-    // If the instructor does not work on this day (no record in DB), return empty slots
-    if (!availability) {
+    if (!availability || !availability.hours || availability.hours.length === 0) {
       return { date, instructorId, slots: [] };
     }
 
-    // 3. Define the time boundaries for the query to capture all lessons on this calendar day
-    const startOfDay = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
-    const endOfDay = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999));
+    // 3. Define timezone-aware time boundaries for the query
+    const startOfDay = targetDate.startOf('day').toDate();
+    const endOfDay = targetDate.endOf('day').toDate();
 
-    // 4. Fetch all active scheduled lessons for this instructor on the target date
+    // 4. Fetch all active scheduled lessons
     const bookedLessons = await prisma.lesson.findMany({
       where: {
         instructorId,
@@ -48,38 +50,32 @@ export class SlotServiceImpl implements ISlotService {
         },
       },
       select: {
-        startTime: true, // Pull only timestamps from the database
+        startTime: true, 
       },
     });
 
-    // Extract already booked starting hours
-    const bookedHours = bookedLessons.map((lesson) => lesson.startTime.getUTCHours());
+    // Extract already booked hours in the local timezone
+    const bookedHours = bookedLessons.map((lesson) => dayjs(lesson.startTime).tz(ISRAEL_TZ).hour());
 
-    // 5. Generate free slots directly from the hours array stored in the database
     const availableSlots: string[] = [];
 
-    // Setup logic to prevent booking in the past for TODAY
-    const now = new Date();
-    const isToday = 
-      now.getUTCFullYear() === year && 
-      now.getUTCMonth() === month - 1 && 
-      now.getUTCDate() === day;
-      
-    const currentUTCHour = now.getUTCHours();
+    // 5. Time travel protection using local time
+    const nowLocal = dayjs().tz(ISRAEL_TZ);
+    const isToday = nowLocal.format('YYYY-MM-DD') === date;
+    const currentLocalHour = nowLocal.hour();
 
     for (const hour of availability.hours) {
-      // Rule A: Skip if another student already booked this exact hour
+      // Rule A: Skip if booked
       if (bookedHours.includes(hour)) continue;
 
-      // Rule B: Skip if the date is today and the hour has already started or passed
-      if (isToday && hour <= currentUTCHour) continue;
+      // Rule B: Skip if the hour has already passed today
+      if (isToday && hour <= currentLocalHour) continue;
 
-      // Format integer hour to standard readable string "HH:00" (e.g., "09:00")
+      // Format integer hour to standard readable string "HH:00"
       const formattedSlot = `${String(hour).padStart(2, '0')}:00`;
       availableSlots.push(formattedSlot);
     }
 
-    // 6. Return unified payload following the shared DTO design contract
     return {
       date,
       instructorId,

@@ -7,11 +7,6 @@ const router = Router();
 const slotService = new SlotServiceImpl();
 const controller = new SlotController(slotService);
 
-/**
- * Route to fetch open driving lesson timeslots
- * Secured by JWT authentication middleware
- * GET /api/slots/available?instructorId=UUID&date=YYYY-MM-DD
- */
 router.get('/available', authenticateJwt, controller.getAvailableSlots);
 
 export default router;
