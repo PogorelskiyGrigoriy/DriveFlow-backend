@@ -2,6 +2,7 @@ import 'dotenv/config';
 
 import express, { Request, Response } from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
 import authRouter from './modules/auth/auth.routes.js';
 import slotRouter from './modules/slots/slot.routes.js';
 import lessonRouter from './modules/lessons/lesson.routes.js';
@@ -14,9 +15,12 @@ import { globalRateLimiter, authRateLimiter } from './middlewares/rate-limiter.m
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Standard Middlewares & Automated HTTP Infrastructure Logging
+// Infrastructure, Operational Logging & Low-Level Security
 app.use(httpLogger);
 app.use(globalRateLimiter);
+app.use(helmet());
+
+// Standard Parsing & Policy Middlewares
 app.use(cors());
 app.use(express.json());
 
@@ -32,10 +36,7 @@ app.get('/health', (req: Request, res: Response) => {
   res.status(200).json({ status: 'OK', timestamp: new Date() });
 });
 
-/**
- * Global Error Handling Middleware Pipeline
- * Intercepts all validation and operational failures downstream
- */
+// Global Error Handling Middleware Pipeline
 app.use(errorMiddleware);
 
 // Start the Express Server
