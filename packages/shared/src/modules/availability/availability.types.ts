@@ -1,14 +1,13 @@
 /**
- * DTO for a single working day's configuration.
+ * Standard server response transfer object detailing a single working day configuration.
  */
-export interface DayAvailabilityDTO {
-  dayOfWeek: number; // 0 = Sunday, 1 = Monday, ..., 5 = Friday
+export interface DayAvailabilityResponseDTO {
+  dayOfWeek: number; // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
   startHour: number;
   endHour: number; 
 }
 
 /**
- * Server response format for the GET endpoint.
- * Returns an array of configured days.
+ * Consolidated server response payload layout containing the full weekly configuration array.
  */
-export type AvailabilityResponseDTO = DayAvailabilityDTO[];
+export type AvailabilityResponseDTO = DayAvailabilityResponseDTO[];

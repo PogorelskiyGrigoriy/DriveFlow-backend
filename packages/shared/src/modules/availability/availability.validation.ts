@@ -1,11 +1,11 @@
 import { z } from 'zod';
 
 /**
- * Validates a single day's schedule entry.
- * Ensures realistic 24-hour boundaries.
+ * Validation schema for a single day's operational schedule entry.
+ * Ensures realistic 24-hour boundaries and correct time flow.
  */
-export const dayAvailabilitySchema = z.object({
-  dayOfWeek: z.number().int().min(0).max(5, 'Allowed days are 0 (Sunday) to 5 (Friday)'),
+export const DayAvailabilitySchema = z.object({
+  dayOfWeek: z.number().int().min(0).max(6, 'Allowed days are 0 (Sunday) to 6 (Saturday)'),
   startHour: z.number().int().min(0).max(23, 'Hour must be between 0 and 23'),
   endHour: z.number().int().min(0).max(23, 'Hour must be between 0 and 23'),
 }).refine(
@@ -14,15 +14,23 @@ export const dayAvailabilitySchema = z.object({
 );
 
 /**
- * Validates the full PUT request body.
- * Expects a clean array of unique working days.
+ * Inferred type for an individual day's operational bounds config.
  */
-export const updateAvailabilitySchema = z.object({
-  schedule: z.array(dayAvailabilitySchema)
+export type DayAvailabilityInput = z.infer<typeof DayAvailabilitySchema>;
+
+/**
+ * Validation schema for the full availability PUT request body.
+ * Expects a structured object containing a clean array of unique working days.
+ */
+export const UpdateAvailabilitySchema = z.object({
+  schedule: z.array(DayAvailabilitySchema)
     .refine(
       (days) => new Set(days.map((d) => d.dayOfWeek)).size === days.length,
       { message: 'Duplicate days are not allowed inside the schedule array' }
     ),
 });
 
-export type UpdateAvailabilityInput = z.infer<typeof updateAvailabilitySchema>;
+/**
+ * Client input payload type for overwriting the entire weekly schedule grid.
+ */
+export type UpdateAvailabilityInput = z.infer<typeof UpdateAvailabilitySchema>;

@@ -2,9 +2,9 @@ import { z } from 'zod';
 import { ISRAEL_PHONE_REGEX } from '../../utils/validation-regex.js';
 
 /**
- * Validation for instructor login via password
+ * Validation schema for instructor authentication via password.
  */
-export const loginInstructorSchema = z.object({
+export const LoginInstructorSchema = z.object({
   phoneNumber: z
     .string()
     .trim()
@@ -15,9 +15,9 @@ export const loginInstructorSchema = z.object({
 });
 
 /**
- * Validation for student magic link request
+ * Validation schema for student magic link request generation.
  */
-export const requestMagicLinkSchema = z.object({
+export const RequestMagicLinkSchema = z.object({
   phoneNumber: z
     .string()
     .trim()
@@ -25,13 +25,13 @@ export const requestMagicLinkSchema = z.object({
 });
 
 /**
- * Validation for the token when clicking the verification link
+ * Validation schema for verifying the security token from a magic link.
  */
-export const verifyMagicLinkSchema = z.object({
+export const VerifyMagicLinkSchema = z.object({
   token: z
     .uuid('Invalid security token format'),
 });
 
-export type LoginInstructorInput = z.infer<typeof loginInstructorSchema>;
-export type RequestMagicLinkInput = z.infer<typeof requestMagicLinkSchema>;
-export type VerifyMagicLinkInput = z.infer<typeof verifyMagicLinkSchema>;
+export type LoginInstructorInput = z.infer<typeof LoginInstructorSchema>;
+export type RequestMagicLinkInput = z.infer<typeof RequestMagicLinkSchema>;
+export type VerifyMagicLinkInput = z.infer<typeof VerifyMagicLinkSchema>;

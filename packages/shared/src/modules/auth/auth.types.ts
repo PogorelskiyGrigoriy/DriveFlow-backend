@@ -2,18 +2,23 @@ import { z } from 'zod';
 import { UserSchema } from '../../generated/zod/index.js';
 
 /**
- * Safe user type for the frontend (excluding sensitive data like passwordHash)
+ * Safe client-side user representation.
+ * Explicitly omits highly sensitive credentials like password hashes.
  */
-export const sharedUserSchema = UserSchema.omit({ 
+export const SafeUserSchema = UserSchema.omit({ 
   passwordHash: true 
 });
 
-export type SharedUser = z.infer<typeof sharedUserSchema>;
+/**
+ * Inferred type for a secure, non-sensitive user profile instance.
+ */
+export type SafeUser = z.infer<typeof SafeUserSchema>;
 
 /**
- * Unified server response upon successful authentication (JWT + Safe User)
+ * Standard server response payload issued upon a successful authentication event.
+ * Delivers the network transit access token alongside safe profile data.
  */
 export interface AuthResponseDTO {
   token: string;
-  user: SharedUser;
+  user: SafeUser;
 }
