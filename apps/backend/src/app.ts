@@ -6,6 +6,7 @@ import authRouter from './modules/auth/auth.routes.js';
 import slotRouter from './modules/slots/slot.routes.js';
 import lessonRouter from './modules/lessons/lesson.routes.js';
 import availabilityRoutes from './modules/availability/availability.routes.js';
+import studentsRouter from './modules/students/students.routes.js';
 import logger from './utils/pino-logger.js';
 import { errorMiddleware } from './middlewares/error.middleware.js';
 
@@ -27,6 +28,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/slots', slotRouter);
 app.use('/api/lessons', lessonRouter);
 app.use('/api/instructor/availability', availabilityRoutes);
+app.use('/api/instructor/students', studentsRouter);
 
 // Basic Health Check Route
 app.get('/health', (req: Request, res: Response) => {
