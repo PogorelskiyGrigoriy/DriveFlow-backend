@@ -1,9 +1,9 @@
 import { IStudentsService } from './students.service.js';
 import { prisma } from '../../infrastructure/db.js';
-import { 
-  CreateStudentInput, 
-  UpdateStudentInput, 
-  InstructorStudentsResponseDTO, 
+import {
+  CreateStudentInput,
+  UpdateStudentInput,
+  InstructorStudentsResponseDTO,
   StudentMutationResponseDTO,
   BaseStudentType
 } from '@driveflow/shared';
@@ -52,13 +52,22 @@ export class StudentsServiceImpl implements IStudentsService {
     });
 
     const now = new Date();
-    return students.map(({ lessonsAsStudent, ...student }) => ({
-      ...student,
-      stats: {
-        totalLessons: lessonsAsStudent.filter(l => l.status === LessonStatus.COMPLETED).length,
-        nextLessonAt: lessonsAsStudent.find(l => l.status === LessonStatus.SCHEDULED && l.startTime > now)?.startTime || null,
-      },
-    }));
+    return students.map(({ lessonsAsStudent, ...student }) => {
+      // Find the closest upcoming scheduled session
+      const nextLessonAt = lessonsAsStudent.find(
+        (l) => l.status === LessonStatus.SCHEDULED && l.startTime > now
+      )?.startTime || null;
+
+      return {
+        ...student,
+        stats: {
+          totalLessons: lessonsAsStudent.filter(l => l.status === LessonStatus.COMPLETED).length,
+          nextLessonAt,
+          // If nextLessonAt exists, the student has an active booking
+          hasActiveBooking: nextLessonAt !== null,
+        },
+      };
+    });
   }
 
   async getStudentById(instructorId: string, studentId: string): Promise<BaseStudentType> {

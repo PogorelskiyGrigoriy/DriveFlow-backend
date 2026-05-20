@@ -22,6 +22,7 @@ export interface StudentWithStatsDTO extends BaseStudentType {
   stats: {
     totalLessons: number;
     nextLessonAt: Date | null;
+    hasActiveBooking: boolean;
   };
 }
 
