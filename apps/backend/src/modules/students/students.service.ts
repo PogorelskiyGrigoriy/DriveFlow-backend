@@ -3,7 +3,7 @@ import {
   UpdateStudentInput, 
   InstructorStudentsResponseDTO, 
   StudentMutationResponseDTO,
-  BaseStudentType
+  BaseStudentDTO
 } from '@driveflow/shared';
 
 export interface IStudentsService {
@@ -15,7 +15,7 @@ export interface IStudentsService {
   /**
    * Retrieves a single active student profile by ID.
    */
-  getStudentById(instructorId: string, studentId: string): Promise<BaseStudentType>;
+  getStudentById(instructorId: string, studentId: string): Promise<BaseStudentDTO>;
 
   /**
    * Registers a new student and assigns them to the requesting instructor.

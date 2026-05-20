@@ -8,16 +8,19 @@ import { NAME_REGEX, ISRAEL_PHONE_REGEX } from '../../utils/validation-regex.js'
 export const CreateStudentSchema = z.object({
   firstName: z
     .string()
+    .trim()
     .min(2, 'First name must contain at least 2 characters')
     .max(50, 'First name is too long')
-    .regex(NAME_REGEX, 'First name contains invalid characters (supports English, Hebrew, Russian, Arabic)'),
+    .regex(NAME_REGEX, 'First name contains invalid characters'),
   lastName: z
     .string()
+    .trim()
     .min(2, 'Last name must contain at least 2 characters')
     .max(50, 'Last name is too long')
-    .regex(NAME_REGEX, 'Last name contains invalid characters (supports English, Hebrew, Russian, Arabic)'),
+    .regex(NAME_REGEX, 'Last name contains invalid characters'),
   phoneNumber: z
     .string()
+    .trim()
     .regex(ISRAEL_PHONE_REGEX, 'Invalid Israeli mobile phone number format'),
 });
 

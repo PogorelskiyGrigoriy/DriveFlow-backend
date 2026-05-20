@@ -5,14 +5,14 @@ import {
   UpdateStudentInput,
   InstructorStudentsResponseDTO,
   StudentMutationResponseDTO,
-  BaseStudentType
+  BaseStudentDTO
 } from '@driveflow/shared';
 import { Role, LessonStatus } from '@prisma/client';
 import { AppError, NotFoundError } from '../../utils/app-errors.js';
 import logger from '../../utils/pino-logger.js';
 
 export class StudentsServiceImpl implements IStudentsService {
-  // Reusable Prisma select block to fulfill BaseStudentType contract automatically
+  // Reusable Prisma select block to fulfill core student data requirements
   private static studentSelect = {
     id: true,
     firstName: true,
@@ -34,7 +34,11 @@ export class StudentsServiceImpl implements IStudentsService {
   // DRY Helper: Enforces unique phone constraints across active accounts
   private async assertPhoneUnique(phoneNumber: string, excludeStudentId?: string) {
     const conflict = await prisma.user.findFirst({
-      where: { phoneNumber, deletedAt: null, NOT: excludeStudentId ? { id: excludeStudentId } : undefined },
+      where: { 
+        phoneNumber, 
+        deletedAt: null, 
+        NOT: excludeStudentId ? { id: excludeStudentId } : undefined 
+      },
     });
     if (conflict) throw new AppError('Phone number is already registered', 409, 'CONFLICT');
   }
@@ -53,25 +57,24 @@ export class StudentsServiceImpl implements IStudentsService {
 
     const now = new Date();
     return students.map(({ lessonsAsStudent, ...student }) => {
-      // Find the closest upcoming scheduled session
       const nextLessonAt = lessonsAsStudent.find(
         (l) => l.status === LessonStatus.SCHEDULED && l.startTime > now
       )?.startTime || null;
 
       return {
-        ...student,
+        ...this.mapToBaseDTO(student),
         stats: {
           totalLessons: lessonsAsStudent.filter(l => l.status === LessonStatus.COMPLETED).length,
-          nextLessonAt,
-          // If nextLessonAt exists, the student has an active booking
+          nextLessonAt: nextLessonAt ? nextLessonAt.toISOString() : null,
           hasActiveBooking: nextLessonAt !== null,
         },
       };
     });
   }
 
-  async getStudentById(instructorId: string, studentId: string): Promise<BaseStudentType> {
-    return this.findInstructorStudent(instructorId, studentId);
+  async getStudentById(instructorId: string, studentId: string): Promise<BaseStudentDTO> {
+    const student = await this.findInstructorStudent(instructorId, studentId);
+    return this.mapToBaseDTO(student);
   }
 
   async createStudent(instructorId: string, input: CreateStudentInput): Promise<StudentMutationResponseDTO> {
@@ -82,7 +85,7 @@ export class StudentsServiceImpl implements IStudentsService {
       select: StudentsServiceImpl.studentSelect,
     });
 
-    return { message: 'Student created successfully', student };
+    return { message: 'Student created successfully', student: this.mapToBaseDTO(student) };
   }
 
   async updateStudent(instructorId: string, studentId: string, input: UpdateStudentInput): Promise<StudentMutationResponseDTO> {
@@ -95,7 +98,7 @@ export class StudentsServiceImpl implements IStudentsService {
       select: StudentsServiceImpl.studentSelect,
     });
 
-    return { message: 'Student updated successfully', student };
+    return { message: 'Student updated successfully', student: this.mapToBaseDTO(student) };
   }
 
   async archiveStudent(instructorId: string, studentId: string): Promise<{ message: string }> {
@@ -127,5 +130,18 @@ export class StudentsServiceImpl implements IStudentsService {
       `Magic Link sent to ${student.firstName} ${student.lastName}`
     );
     return { message: 'Invitation link generated' };
+  }
+
+  /**
+   * Helper utility to format Prisma user objects into transport-safe BaseStudentDTOs.
+   */
+  private mapToBaseDTO(student: any): BaseStudentDTO {
+    return {
+      id: student.id,
+      firstName: student.firstName,
+      lastName: student.lastName,
+      phoneNumber: student.phoneNumber,
+      createdAt: student.createdAt.toISOString(),
+    };
   }
 }
