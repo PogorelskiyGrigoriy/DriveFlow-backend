@@ -6,33 +6,29 @@ export class AvailabilityController {
   constructor(private availabilityService: IAvailabilityService) {}
 
   /**
-   * GET /api/instructor/availability
+   * Retrieves the current schedule for the authenticated instructor.
    */
   getAvailability = async (req: Request, res: Response): Promise<void> => {
-    const instructorId = req.user.id; 
-
+    const instructorId = req.user!.id; 
     const result = await this.availabilityService.getInstructorAvailability(instructorId);
     res.status(200).json(result);
   };
 
   /**
-   * PUT /api/instructor/availability
+   * Overwrites the schedule using the validated array payload.
    */
   updateAvailability = async (req: Request, res: Response): Promise<void> => {
-    const instructorId = req.user.id;
-
+    const instructorId = req.user!.id;
     const validatedInput = UpdateAvailabilitySchema.parse(req.body);
     const result = await this.availabilityService.updateAvailability(instructorId, validatedInput);
-
     res.status(200).json(result);
   };
 
   /**
-   * POST /api/instructor/availability/publish
+   * Triggers the magic link dispatch to all assigned students.
    */
   publishAvailability = async (req: Request, res: Response): Promise<void> => {
-    const instructorId = req.user.id;
-
+    const instructorId = req.user!.id;
     const result = await this.availabilityService.publishAvailability(instructorId);
     res.status(200).json(result);
   };
