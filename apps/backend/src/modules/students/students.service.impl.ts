@@ -12,7 +12,6 @@ import { AppError, NotFoundError } from '../../utils/app-errors.js';
 import logger from '../../utils/pino-logger.js';
 
 export class StudentsServiceImpl implements IStudentsService {
-  // Reusable Prisma select block to fulfill core student data requirements
   private static studentSelect = {
     id: true,
     firstName: true,
@@ -21,7 +20,6 @@ export class StudentsServiceImpl implements IStudentsService {
     createdAt: true,
   } as const;
 
-  // DRY Helper: Centralized ownership and existence verification
   private async findInstructorStudent(instructorId: string, studentId: string) {
     const student = await prisma.user.findFirst({
       where: { id: studentId, instructorId, role: Role.STUDENT, deletedAt: null },
@@ -31,7 +29,6 @@ export class StudentsServiceImpl implements IStudentsService {
     return student;
   }
 
-  // DRY Helper: Enforces unique phone constraints across active accounts
   private async assertPhoneUnique(phoneNumber: string, excludeStudentId?: string) {
     const conflict = await prisma.user.findFirst({
       where: { 
@@ -125,16 +122,14 @@ export class StudentsServiceImpl implements IStudentsService {
       data: { userId: student.id, expiresAt: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000) },
     });
 
+    const webAppUrl = process.env.WEB_APP_URL || 'http://localhost:5173';
     logger.info(
-      { studentId: student.id, phoneNumber: student.phoneNumber, token: magicToken.token },
+      { studentId: student.id, phoneNumber: student.phoneNumber, magicLink: `${webAppUrl}/verify?token=${magicToken.token}` },
       `Magic Link sent to ${student.firstName} ${student.lastName}`
     );
     return { message: 'Invitation link generated' };
   }
 
-  /**
-   * Helper utility to format Prisma user objects into transport-safe BaseStudentDTOs.
-   */
   private mapToBaseDTO(student: any): BaseStudentDTO {
     return {
       id: student.id,

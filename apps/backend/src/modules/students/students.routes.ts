@@ -8,40 +8,22 @@ const router = Router();
 const studentsService = new StudentsServiceImpl();
 const controller = new StudentsController(studentsService);
 
-/**
- * Route to get all active students with aggregated dashboard statistics
- * GET /api/instructor/students
- */
+// Get all active students with metrics for the instructor
 router.get('/', authenticateJwt, requireRole(Role.INSTRUCTOR), controller.getStudents);
 
-/**
- * Route to get a single active student profile by ID
- * GET /api/instructor/students/:id
- */
+// Get a single active student profile by ID
 router.get('/:id', authenticateJwt, requireRole(Role.INSTRUCTOR), controller.getStudentById);
 
-/**
- * Route to create a new student record
- * POST /api/instructor/students
- */
+// Register a new student record
 router.post('/', authenticateJwt, requireRole(Role.INSTRUCTOR), controller.createStudent);
 
-/**
- * Route to update student records (firstName, lastName, phoneNumber)
- * PUT /api/instructor/students/:id
- */
+// Update basic student profile details
 router.put('/:id', authenticateJwt, requireRole(Role.INSTRUCTOR), controller.updateStudent);
 
-/**
- * Route to archive student (Soft-delete or Hard-delete based on lesson history)
- * DELETE /api/instructor/students/:id
- */
+// Archive or hard-delete a student based on lesson history
 router.delete('/:id', authenticateJwt, requireRole(Role.INSTRUCTOR), controller.archiveStudent);
 
-/**
- * Route to generate and dispatch a separate Magic Link for a student
- * POST /api/instructor/students/:id/invite
- */
+// Generate and log a new Magic Sign-In Link for a student
 router.post('/:id/invite', authenticateJwt, requireRole(Role.INSTRUCTOR), controller.inviteStudent);
 
 export default router;
