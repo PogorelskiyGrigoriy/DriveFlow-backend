@@ -3,6 +3,14 @@ import { prisma } from '../../infrastructure/db.js';
 import { CreateLessonInput, LessonResponseDTO, UpdateLessonStatusInput, DATE_YYYY_MM_DD_REGEX } from '@driveflow/shared';
 import { LessonStatus, Role, Lesson } from '@prisma/client';
 import { ValidationError, ConflictError, NotFoundError, ForbiddenError } from '../../utils/app-errors.js';
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc.js';
+import timezone from 'dayjs/plugin/timezone.js';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
+const ISRAEL_TZ = 'Asia/Jerusalem';
 
 export class LessonServiceImpl implements ILessonService {
   /**
@@ -12,8 +20,9 @@ export class LessonServiceImpl implements ILessonService {
   async createLesson(input: CreateLessonInput): Promise<LessonResponseDTO> {
     const { instructorId, studentId, startTime } = input;
 
-    const dayOfWeek = startTime.getUTCDay();
-    const lessonHour = startTime.getUTCHours();
+    const localTime = dayjs(startTime).tz(ISRAEL_TZ);
+    const dayOfWeek = localTime.day();
+    const lessonHour = localTime.hour();
 
     // 1. Verify Instructor's general working availability
     const availability = await prisma.instructorAvailability.findFirst({
@@ -140,8 +149,8 @@ export class LessonServiceImpl implements ILessonService {
       throw new ValidationError('Invalid date format. Expected YYYY-MM-DD.');
     }
 
-    const startOfDay = new Date(`${dateStr}T00:00:00.000Z`);
-    const endOfDay = new Date(`${dateStr}T23:59:59.999Z`);
+    const startOfDay = dayjs.tz(`${dateStr}T00:00:00`, ISRAEL_TZ).toDate();
+    const endOfDay = dayjs.tz(`${dateStr}T23:59:59.999`, ISRAEL_TZ).toDate();
 
     const lessons = await prisma.lesson.findMany({
       where: {

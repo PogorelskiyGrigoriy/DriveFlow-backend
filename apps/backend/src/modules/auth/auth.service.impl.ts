@@ -4,7 +4,7 @@ import { compare } from 'bcrypt-ts';
 import jwt from 'jsonwebtoken';
 import logger from '../../utils/pino-logger.js';
 import { Role } from '@prisma/client';
-import { AuthResponseDTO, SharedUser } from '@driveflow/shared';
+import { AuthResponseDTO, SafeUser } from '@driveflow/shared';
 import { AppError, UnauthorizedError } from '../../utils/app-errors.js';
 
 export class AuthServiceImpl implements IAuthService {
@@ -13,11 +13,8 @@ export class AuthServiceImpl implements IAuthService {
   async loginInstructor(phoneNumber: string, passwordRaw: string): Promise<AuthResponseDTO> {
     const user = await prisma.user.findUnique({ where: { phoneNumber } });
 
+    // Ensure user exists, is an active instructor, and is not soft-deleted
     if (!user || user.role !== Role.INSTRUCTOR || user.deletedAt !== null) {
-      throw new UnauthorizedError('Invalid phone number or insufficient permissions');
-    }
-
-    if (!user || user.role !== Role.INSTRUCTOR) {
       throw new UnauthorizedError('Invalid phone number or insufficient permissions');
     }
 
@@ -32,33 +29,19 @@ export class AuthServiceImpl implements IAuthService {
 
     const token = jwt.sign({ id: user.id, role: user.role }, this.jwtSecret, { expiresIn: '30d' });
     
-    const safeUser: SharedUser = {
-      id: user.id,
-      phoneNumber: user.phoneNumber,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      role: user.role,
-      createdAt: user.createdAt,
-      instructorId: user.instructorId,
-      deletedAt: user.deletedAt
-    };
-
-    return { token, user: safeUser };
+    return { token, user: this.mapToSafeUser(user) };
   }
 
   async requestMagicLink(phoneNumber: string): Promise<void> {
     const user = await prisma.user.findUnique({ where: { phoneNumber } });
 
+    // Ensure user exists, is an active student, and is not soft-deleted
     if (!user || user.role !== Role.STUDENT || user.deletedAt !== null) {
       throw new AppError('Student with this phone number was not found', 404, 'NOT_FOUND');
     }
-    
-    if (!user || user.role !== Role.STUDENT) {
-      throw new AppError('Student with this phone number was not found', 404, 'NOT_FOUND');
-    }
 
-    const expiresAt = new Date();
-    expiresAt.setMinutes(expiresAt.getMinutes() + 15);
+    // Set expiration to 15 minutes from now
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
     const magicRecord = await prisma.magicToken.create({
       data: {
@@ -93,19 +76,25 @@ export class AuthServiceImpl implements IAuthService {
       { expiresIn: '30d' }
     );
 
+    // Clean up the used token
     await prisma.magicToken.delete({ where: { id: magicRecord.id } });
 
-    const safeUser: SharedUser = {
-      id: magicRecord.user.id,
-      phoneNumber: magicRecord.user.phoneNumber,
-      firstName: magicRecord.user.firstName,
-      lastName: magicRecord.user.lastName,
-      role: magicRecord.user.role,
-      createdAt: magicRecord.user.createdAt,
-      instructorId: magicRecord.user.instructorId,
-      deletedAt: magicRecord.user.deletedAt
-    };
+    return { token: sessionToken, user: this.mapToSafeUser(magicRecord.user) };
+  }
 
-    return { token: sessionToken, user: safeUser };
+  /**
+   * Helper utility to format Prisma user objects into transport-safe SafeUser records.
+   */
+  private mapToSafeUser(user: any): SafeUser {
+    return {
+      id: user.id,
+      phoneNumber: user.phoneNumber,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: user.role,
+      createdAt: user.createdAt,
+      instructorId: user.instructorId,
+      deletedAt: user.deletedAt
+    };
   }
 }

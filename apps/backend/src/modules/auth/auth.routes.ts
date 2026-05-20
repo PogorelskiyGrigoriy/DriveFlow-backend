@@ -6,7 +6,7 @@ const router = Router();
 const authService = new AuthServiceImpl();
 const controller = new AuthController(authService);
 
-// Authentication routes
+// Authentication endpoints
 router.post('/instructor/login', controller.loginInstructor);
 router.post('/student/request-link', controller.requestMagicLink);
 router.get('/student/verify', controller.verifyMagicLink);

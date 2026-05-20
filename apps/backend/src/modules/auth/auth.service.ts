@@ -1,12 +1,15 @@
 import { AuthResponseDTO } from '@driveflow/shared';
 
+/**
+ * Interface defining authentication and session management operations.
+ */
 export interface IAuthService {
-  // Login for instructors (Password)
+  /** Authenticates an instructor via password and returns a JWT session. */
   loginInstructor(phoneNumber: string, passwordRaw: string): Promise<AuthResponseDTO>;
   
-  // Request Magic Link for students (SMS simulation)
+  /** Generates and dispatches a single-use magic login link via SMS. */
   requestMagicLink(phoneNumber: string): Promise<void>;
   
-  // Verify Magic Link when clicked from URL
+  /** Validates a magic token and returns a JWT session if valid. */
   verifyMagicLink(token: string): Promise<AuthResponseDTO>;
 }
