@@ -13,18 +13,14 @@ dayjs.extend(timezone);
 const ISRAEL_TZ = 'Asia/Jerusalem';
 
 export class LessonServiceImpl implements ILessonService {
-  /**
-   * Books a new driving lesson.
-   * Orchestrates working hours validations and double-booking guards.
-   */
-  async createLesson(input: CreateLessonInput): Promise<LessonResponseDTO> {
+  
+  async createLesson(input: CreateLessonInput & { studentId: string }): Promise<LessonResponseDTO> {
     const { instructorId, studentId, startTime } = input;
 
     const localTime = dayjs(startTime).tz(ISRAEL_TZ);
     const dayOfWeek = localTime.day();
     const lessonHour = localTime.hour();
 
-    // 1. Verify Instructor's general working availability
     const availability = await prisma.instructorAvailability.findFirst({
       where: { instructorId, dayOfWeek },
     });
@@ -33,19 +29,14 @@ export class LessonServiceImpl implements ILessonService {
       throw new ValidationError('The instructor does not have a working schedule configured for this day.');
     }
 
-    // 2. Validate boundaries using the new hours array structure
-    // Ensures the requested hour explicitly exists within the instructor's custom shifts/slots
     if (!availability.hours.includes(lessonHour)) {
       throw new ValidationError(
         `Requested hour ${String(lessonHour).padStart(2, '0')}:00 is not within the instructor's scheduled working hours for this day.`
       );
     }
 
-    // 3. Check for existing booking conflicts
     const existingLesson = await prisma.lesson.findUnique({
-      where: {
-        instructorId_startTime: { instructorId, startTime },
-      },
+      where: { instructorId_startTime: { instructorId, startTime } },
     });
 
     let savedLesson: Lesson;
@@ -54,27 +45,17 @@ export class LessonServiceImpl implements ILessonService {
       if (existingLesson.status === LessonStatus.SCHEDULED) {
         throw new ConflictError('This specific timeslot has already been booked by another student.');
       }
-
-      // Explicitly delegation to our private DB mutator for Smart Recycling
+      // Smart Recycling
       savedLesson = await this.recycleCancelledLesson(existingLesson.id, studentId);
     } else {
-      // Perfect happy path: Create a fresh entry
       savedLesson = await prisma.lesson.create({
-        data: {
-          instructorId,
-          studentId,
-          startTime,
-          status: LessonStatus.SCHEDULED,
-        },
+        data: { instructorId, studentId, startTime, status: LessonStatus.SCHEDULED },
       });
     }
 
     return this.mapToResponseDTO(savedLesson);
   }
 
-  /**
-   * Updates an existing lesson's status with security checks and time policies
-   */
   async updateLessonStatus(
     lessonId: string,
     input: UpdateLessonStatusInput,
@@ -83,19 +64,13 @@ export class LessonServiceImpl implements ILessonService {
   ): Promise<LessonResponseDTO> {
     const { status: targetStatus } = input;
 
-    const lesson = await prisma.lesson.findUnique({
-      where: { id: lessonId },
-    });
+    const lesson = await prisma.lesson.findUnique({ where: { id: lessonId } });
 
-    if (!lesson) {
-      throw new NotFoundError('Lesson');
-    }
-
+    if (!lesson) throw new NotFoundError('Lesson');
     if (lesson.status !== LessonStatus.SCHEDULED) {
       throw new ValidationError(`Cannot change status. This lesson is already ${lesson.status.toLowerCase()}.`);
     }
 
-    // Access Control Guard
     if (userRole === Role.STUDENT && lesson.studentId !== userId) {
       throw new ForbiddenError('You can only manage your own driving lessons.');
     }
@@ -103,16 +78,13 @@ export class LessonServiceImpl implements ILessonService {
       throw new ForbiddenError('You can only manage lessons assigned to you.');
     }
 
-    // Role-Specific Business Rules
-    if (targetStatus === LessonStatus.CANCELLED) {
-      if (userRole === Role.STUDENT) {
-        const now = new Date();
-        const millisecondsToLesson = lesson.startTime.getTime() - now.getTime();
-        const hoursToLesson = millisecondsToLesson / (1000 * 60 * 60);
+    if (targetStatus === LessonStatus.CANCELLED && userRole === Role.STUDENT) {
+      const now = dayjs();
+      const lessonTime = dayjs(lesson.startTime);
+      const hoursToLesson = lessonTime.diff(now, 'hour', true);
 
-        if (hoursToLesson < 24) {
-          throw new ValidationError('Less than 24 hours remain until the lesson. Please contact your instructor to cancel or reschedule.');
-        }
+      if (hoursToLesson < 24) {
+        throw new ValidationError('Less than 24 hours remain until the lesson. Please contact your instructor to cancel or reschedule.');
       }
     }
 
@@ -128,22 +100,14 @@ export class LessonServiceImpl implements ILessonService {
     return this.mapToResponseDTO(updatedLesson);
   }
 
-  /**
-   * Retrieves all lessons for a specific student, ordered by upcoming first.
-   */
   async getUserLessons(userId: string): Promise<LessonResponseDTO[]> {
     const lessons = await prisma.lesson.findMany({
       where: { studentId: userId },
       orderBy: { startTime: 'asc' }, 
     });
-
     return lessons.map(lesson => this.mapToResponseDTO(lesson));
   }
 
-  /**
-   * Retrieves all lessons for an instructor on a specific calendar day.
-   * Expects dateStr in YYYY-MM-DD format.
-   */
   async getInstructorSchedule(instructorId: string, dateStr: string): Promise<LessonResponseDTO[]> {
     if (!DATE_YYYY_MM_DD_REGEX.test(dateStr)) {
       throw new ValidationError('Invalid date format. Expected YYYY-MM-DD.');
@@ -155,10 +119,7 @@ export class LessonServiceImpl implements ILessonService {
     const lessons = await prisma.lesson.findMany({
       where: {
         instructorId,
-        startTime: {
-          gte: startOfDay,
-          lte: endOfDay,
-        },
+        startTime: { gte: startOfDay, lte: endOfDay },
       },
       orderBy: { startTime: 'asc' }, 
     });
@@ -166,24 +127,13 @@ export class LessonServiceImpl implements ILessonService {
     return lessons.map(lesson => this.mapToResponseDTO(lesson));
   }
 
-  /**
-   * Private DB Mutator to override and recycle an existing CANCELLED record.
-   * Keeps database size small and prevents unique index constraints errors.
-   */
   private async recycleCancelledLesson(lessonId: string, studentId: string): Promise<Lesson> {
     return await prisma.lesson.update({
       where: { id: lessonId },
-      data: {
-        studentId,
-        status: LessonStatus.SCHEDULED,
-      },
+      data: { studentId, status: LessonStatus.SCHEDULED },
     });
   }
 
-  /**
-   * Helper utility to format Prisma Lesson objects into transport-safe DTOs.
-   * Fully type-safe and synchronous.
-   */
   private mapToResponseDTO(lesson: Lesson): LessonResponseDTO {
     return {
       id: lesson.id,

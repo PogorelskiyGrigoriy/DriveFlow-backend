@@ -2,27 +2,13 @@ import { CreateLessonInput, LessonResponseDTO, UpdateLessonStatusInput } from '@
 import { Role } from '@prisma/client';
 
 /**
- * Interface definition for Driving Lesson Management.
- * Handles booking orchestration, state changes, double-booking protection, and data retrieval.
+ * Interface defining driving lesson orchestration and scheduling operations.
  */
 export interface ILessonService {
-  /**
-   * Books a new 1-hour driving lesson.
-   * Validates instructor availability and ensures no time conflicts exist.
-   * @param input - Validated lesson details containing instructor, student, and start time
-   * @returns A promise resolving to the created lesson record DTO
-   */
-  createLesson(input: CreateLessonInput): Promise<LessonResponseDTO>;
+  /** Books a new lesson, validating instructor availability and preventing double-booking. */
+  createLesson(input: CreateLessonInput & { studentId: string }): Promise<LessonResponseDTO>;
 
-  /**
-   * Updates the operational status of an existing driving lesson.
-   * Enforces business rules such as the 24-hour cancellation lock for students.
-   * @param lessonId - Unique identifier (UUID) of the target lesson
-   * @param input - Validated status payload (SCHEDULED, COMPLETED, CANCELLED)
-   * @param userId - ID of the user requesting the change (extracted from JWT)
-   * @param userRole - Role of the user requesting the change (STUDENT or INSTRUCTOR)
-   * @returns A promise resolving to the updated lesson record DTO
-   */
+  /** Updates lesson status, enforcing access control and cancellation policies. */
   updateLessonStatus(
     lessonId: string,
     input: UpdateLessonStatusInput,
@@ -30,20 +16,9 @@ export interface ILessonService {
     userRole: Role
   ): Promise<LessonResponseDTO>;
 
-  /**
-   * Retrieves all lessons for a specific student, ordered chronologically.
-   * Used for the student's dashboard (upcoming lesson widget & history archive).
-   * @param userId - ID of the student requesting their lessons
-   * @returns A promise resolving to an array of lesson DTOs
-   */
+  /** Retrieves chronologically ordered lesson history for a specific student. */
   getUserLessons(userId: string): Promise<LessonResponseDTO[]>;
 
-  /**
-   * Retrieves all lessons for an instructor on a specific calendar day.
-   * Used for the instructor's daily schedule view.
-   * @param instructorId - ID of the instructor
-   * @param dateStr - Target date string in YYYY-MM-DD format
-   * @returns A promise resolving to an array of lesson DTOs ordered by start time
-   */
+  /** Retrieves an instructor's linear schedule for a specific date (YYYY-MM-DD). */
   getInstructorSchedule(instructorId: string, dateStr: string): Promise<LessonResponseDTO[]>;
 }
