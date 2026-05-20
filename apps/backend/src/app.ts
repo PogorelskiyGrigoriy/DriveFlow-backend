@@ -9,17 +9,19 @@ import availabilityRoutes from './modules/availability/availability.routes.js';
 import studentsRouter from './modules/students/students.routes.js';
 import logger, { httpLogger } from './utils/pino-logger.js';
 import { errorMiddleware } from './middlewares/error.middleware.js';
+import { globalRateLimiter, authRateLimiter } from './middlewares/rate-limiter.middleware.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Standard Middlewares & Automated HTTP Infrastructure Logging
-app.use(httpLogger); // Must be the absolute first middleware
+app.use(httpLogger);
+app.use(globalRateLimiter);
 app.use(cors());
-app.use(express.json()); // Essential for parsing req.body
+app.use(express.json());
 
 // Mount Feature Routes
-app.use('/api/auth', authRouter);
+app.use('/api/auth', authRateLimiter, authRouter);
 app.use('/api/slots', slotRouter);
 app.use('/api/lessons', lessonRouter);
 app.use('/api/instructor/availability', availabilityRoutes);
