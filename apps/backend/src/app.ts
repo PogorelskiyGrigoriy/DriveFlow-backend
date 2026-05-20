@@ -1,27 +1,22 @@
 import 'dotenv/config';
 
-import express, { Request, Response, NextFunction } from 'express';
+import express, { Request, Response } from 'express';
 import cors from 'cors';
 import authRouter from './modules/auth/auth.routes.js';
 import slotRouter from './modules/slots/slot.routes.js';
 import lessonRouter from './modules/lessons/lesson.routes.js';
 import availabilityRoutes from './modules/availability/availability.routes.js';
 import studentsRouter from './modules/students/students.routes.js';
-import logger from './utils/pino-logger.js';
+import logger, { httpLogger } from './utils/pino-logger.js';
 import { errorMiddleware } from './middlewares/error.middleware.js';
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3000;
 
-// Standard Middlewares
+// Standard Middlewares & Automated HTTP Infrastructure Logging
+app.use(httpLogger); // Must be the absolute first middleware
 app.use(cors());
 app.use(express.json()); // Essential for parsing req.body
-
-// Request logging middleware for backend activity tracking
-app.use((req: Request, res: Response, next: NextFunction) => {
-  logger.info(`${req.method} ${req.url}`);
-  next();
-});
 
 // Mount Feature Routes
 app.use('/api/auth', authRouter);

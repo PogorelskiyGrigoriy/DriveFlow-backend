@@ -1,4 +1,5 @@
 import pino from "pino";
+import { pinoHttp } from "pino-http";
 import fs from "node:fs";
 import pretty from "pino-pretty";
 
@@ -35,11 +36,16 @@ const streams: pino.StreamEntry[] = [
     }
 ];
 
-const logger = pino(
-    {
-        level: logLevel,
+const logger = pino({ level: logLevel }, pino.multistream(streams));
+
+export const httpLogger = pinoHttp({
+    logger,
+    customSuccessMessage: (req, res, responseTime) => {
+        return `${req.method} ${req.url} ${res.statusCode} - ${responseTime}ms`;
     },
-    pino.multistream(streams)
-);
+    customErrorMessage: (req, res, err) => {
+        return `${req.method} ${req.url} ${res.statusCode} - Error: ${err.message}`;
+    }
+});
 
 export default logger;
